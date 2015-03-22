@@ -1,0 +1,550 @@
+"""
+Abstract description of a Cluster Job
+"""
+__version__ = "1.0.0"
+
+import os
+import subprocess as sp
+import tempfile
+import cPickle as pickle
+from .utils import set_executable
+
+class Job(object):
+    """
+    Class Attributes
+    ----------------
+
+    default_opts: dict
+        Default values of the `options` attribute for a newly created Job
+        instance.
+
+    backends: dict
+        Available backends. Maps backend name to a dictionary of backend
+        options. See the documentation of `clusterjob.backends.slurm`, for
+        details. User-defined backends may be added with the `register_backend`
+        class method
+
+    default_backend: str
+        The default backend name to be used.
+
+    default_shell: str
+        The shell to be used (shebang) for the job script. Also the shebang for
+        the prologue and epilogue scripts, if no shebang is present in those
+        scripts
+
+    default_remote: str
+        The remote to be used when submitting the job script
+
+    cache_folder: str
+        Local folder in which to cache the AsyncResult instances resulting from
+        job submission
+
+    cache_prefix: str
+        prefix for cache filenames
+
+    cache_counter: int
+        Internal counter to be used when no cache_id is specified during
+        submission
+
+    Attributes
+    ----------
+
+    backend: str
+        name of backend, must be a key in the backends class dictionary
+
+    shell: str
+        shell that is used to execute runscript
+
+    remote: str
+        remote server on which to execute submit commands
+
+    workdir: str
+        work directory (local or remote) in which the job script file will be
+        placed, and from which the submission command will be called.
+
+    filename: str
+        Name of file to which the job script will be written (inside workdir)
+
+    prologue: str
+        multiline shell script that will be executed *locally* in the current
+        working directory before submitting the job. If the script does not
+        contain a shebang, the shell specified in the `shell` attribute will be
+        used. The body of the script will be formatted with the job attributes,
+        e.g. '{remote}' will be replaced by the value of the `remote`
+        attribute. The main purpose of the prologue script is to move data to a
+        remote cluster.
+
+    epilogue: str
+        multiline shell script that will be executed *locally* in the current
+        working directory the first time that the job is known to have
+        finished. It will be formatted in the same way as the prologue script
+        (at submission time). It's execution will be handled by the AsyncResult
+        object resulting from the job submission. The main purpose of the
+        epilogue script is to move data from a remote cluster upon completion
+        of the job.
+
+    options: dict
+        Dictionary of submission options describing resource requirements. Will
+        be translated according to the backend and passed to the submission
+        command
+
+    jobscript: str
+        Multiline job script. Should not contain a shebang or backend-specific
+        submission headers. It will be renedered for the given backend by
+        adding a shebang, the job submission headers (based on the `options`
+        attribute), and by applying the mappings defined in the 'job_vars'
+        entry of the backend
+
+    Example
+    -------
+
+    >>> script = r'''
+    ... echo "####################################################"
+    ... echo "Job id: $XXX_JOB_ID"
+    ... echo "Job name: $XXX_WORKDIR"
+    ... echo "Job started on" `hostname` `date`
+    ... echo "Current directory:" `pwd`
+    ... echo "####################################################"
+    ...
+    ... echo "####################################################"
+    ... echo "Full Environment:"
+    ... printenv
+    ... echo "####################################################"
+    ...
+    ... sleep 90
+    ...
+    ... echo "Job Finished: " `date`
+    ... exit 0
+    ... '''
+    >>> job = Job(script, backend='slurm', name='printenv', queue='test',
+    ... time='00:05:00', nodes=1, threads=1, mem=100,
+    ...  stdout='printenv.out', stderr='printenv.err')
+    >>> print job
+    #!/bin/bash
+    #SBATCH --name=printenv
+    #SBATCH --stdout=printenv.out
+    #SBATCH --mem=100
+    #SBATCH --queue=test
+    #SBATCH --threads=1
+    #SBATCH --stderr=printenv.err
+    #SBATCH --time=00:05:00
+    #SBATCH --nodes=1
+    <BLANKLINE>
+    echo "####################################################"
+    echo "Job id: $SLURM_JOB_ID"
+    echo "Job name: $SLURM_SUBMIT_DIR"
+    echo "Job started on" `hostname` `date`
+    echo "Current directory:" `pwd`
+    echo "####################################################"
+    <BLANKLINE>
+    echo "####################################################"
+    echo "Full Environment:"
+    printenv
+    echo "####################################################"
+    <BLANKLINE>
+    sleep 90
+    <BLANKLINE>
+    echo "Job Finished: " `date`
+    exit 0
+    <BLANKLINE>
+    """
+
+    default_opts = {}
+    backends = {}
+    default_backend = 'slurm'
+    default_shell = None
+    default_remote = None
+    cache_folder = None
+    cache_prefix = 'clusterjob'
+    cache_counter = 0
+
+    @classmethod
+    def register_backend(cls, backend):
+        """
+        Register a new backend
+
+        `backend` must be a dictionary that follows the same structure as
+        `clusterjob.backends.slurm.backend`. If the dictionary is found to have
+        the wrong structure, an AssertionError will be raised.
+        """
+        from . backends import check_backend
+        if check_backend(backend):
+            cls.backends[backend['name']] = backend
+
+    def __init__(self, jobscript, **kwargs):
+        """
+        Keyword Arguments
+        -----------------
+
+        The backend, shell, remote, workdir, filename, prologue, and
+        epilogue arguments specify the value of the corresponding attributes.
+        All other keyword arguments are used as options for the job sumbmission
+        command (e.g. sbatch for slurm or qsub for PBS). At a minimum, the
+        following arguments should be supported:
+
+        name: str
+            Name of the job
+
+        queue: str
+            Name of queue/partition to which to submit the job
+
+        time: time
+            Maximum runtime
+
+        nodes: int
+            Required number of nodes
+
+        threads: int
+            Required number of threads (cores)
+
+        mem: int
+            Required memory
+
+        stdout: str
+            name of file to which to write the jobs stdout
+
+        stderr: str
+            name of file to which to write the jobs stderr
+
+        Custom backends may define further options. Unknown arguments are
+        passed directly as arguments to the backend's job submission command
+        . Single-letter argument
+        names are prepended with '-', multi-letter argument names with '--'.
+        An argument with boolean values is passed without any value iff the
+        value is True:
+
+            contiguous=True          -> --contiguous
+            dependency='after:12454' -> --dependency=after:12454
+            F='nodefile.txt'         -> -F nodefile.txt
+
+        """
+        self.options = {}
+
+        self.jobscript = jobscript
+
+        if len(self.backends) == 0:
+            # register all available backends
+            import pkgutil
+            import clusterjob.backends
+            for __, module_name, __ \
+            in pkgutil.walk_packages(clusterjob.backends.__path__):
+                mod = __import__('clusterjob.backends.%s' % module_name,
+                                  globals(), locals(), ['backend', ], -1)
+                self.register_backend(mod.backend)
+
+        for kw in ['backend', 'shell', 'remote', 'workdir', 'filename',
+        'prologue', 'epilogue']:
+            self.__dict__[kw] = None
+            if kw in kwargs:
+                self.__dict__[kw] = kwargs[kw]
+                del kwargs[kw]
+            else:
+                default_key = 'default_%s' % kw
+                if default_key in self.__class__.__dict__:
+                    self.__dict__[kw] = self.__class__.__dict__[default_key]
+        if self.shell is None:
+            self.shell = '/bin/bash'
+
+        self.options.update(self.backends[self.backend]['default_opts'])
+        self.options.update(self.default_opts)
+        self.options.update(kwargs)
+
+    def __str__(self):
+        """Return the string representation of the job, i.e. the fully rendered
+        jobscript"""
+
+        opt_translator = self.backends[self.backend]['translate_options']
+        opt_array = opt_translator(self.options)
+        prefix = self.backends[self.backend]['prefix']
+        jobscript = self.jobscript
+        var_replacements = self.backends[self.backend]['job_vars']
+        for var in var_replacements:
+            jobscript = jobscript.replace(var, var_replacements[var])
+        jobscript_lines = []
+        jobscript_lines.append("#!%s" % self.shell)
+        for option in opt_array:
+            jobscript_lines.append("%s %s" % (prefix, option))
+        for line in jobscript.split("\n"):
+            if not line.startswith("#!"):
+                jobscript_lines.append(line)
+        jobscript = "\n".join(jobscript_lines)
+        return jobscript
+
+    def write(self, filename=None):
+        """
+        Write out the fully rendered jobscript to file. If filename is not
+        None, write to the given *local* file. Otherwise, write to the local or
+        remote file specified in the filename attribute, in the folder
+        specified by the workdir attribute
+        """
+        remote = self.remote
+        if filename is None:
+            filename = self.filename
+            if self.workdir is not None:
+                filename = os.path.join(self.workdir, filename)
+        else:
+            remote = None
+
+        if filename is None:
+            raise ValueError("filename not given")
+
+        # Write / Upload
+        if remote is None:
+            with open(filename, 'w') as run_fh:
+                run_fh.write(str(self))
+            set_executable(filename)
+        else:
+            tempfilename = tempfile.mkstemp()[1]
+            with open(tempfilename, 'w') as run_fh:
+                run_fh.write(str(self))
+            set_executable(tempfilename)
+            try:
+                sp.check_output(
+                    ['scp', tempfilename, remote+':'+filename],
+                    stderr=sp.STDOUT)
+            finally:
+                os.unlink(tempfilename)
+
+    def _run_prologue(self):
+        """Render and run the prologue script"""
+        if self.prologue is not None:
+            prologue = self.prologue.format(**self.__dict__)
+            if not prologue.startswith("#!"):
+                prologue = "#!" + self.shell + "\n" + prologue
+            tempfilename = tempfile.mkstemp()[1]
+            with open(tempfilename, 'w') as prologue_fh:
+                prologue_fh.write(prologue)
+            set_executable(tempfilename)
+            try:
+                sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
+            finally:
+                os.unlink(tempfilename)
+
+    def submit(self, block=False, cache_id=None, verbose=False):
+        """
+        Submit the job.
+
+        Parameters
+        ----------
+
+        block: boolean
+            If `block` is True, wait until the job is finished, and return the
+            exit status code. Otherwise, return an AsyncResult object.
+
+        cache_id: str or None
+            An ID uniquely defining the submission, used as identifier for the
+            cached AscynResult object. If not given, the cache_id is determined
+            internally. If an AsyncResult with a matching cache_id is present
+            in the cache_folder, nothing is submitted to the cluster, and that
+            AsyncResult object is returned
+        """
+        assert 'name' in self.options, 'Job must have a defined name'
+        assert self.filename is not None, 'jobscript must have a filename'
+        if verbose:
+            if self.remote is None:
+                print "Submitting job %s locally" \
+                        % self.options['name']
+            else:
+                print "Submitting job %s on %s" \
+                        % (self.options['name'], self.remote)
+        self._run_prologue()
+
+        submitted = False
+        if cache_id is None:
+            Job.cache_counter += 1
+            cache_id = str(Job.cache_counter)
+        else:
+            cache_id = str(cache_id)
+        cache_file = None
+
+        ar = AsyncResult(backend=self.backends[self.backend])
+
+        if self.cache_folder is not None:
+            from .utils import mkdir
+            mkdir(self.cache_folder)
+            cache_file = os.path.join(self.cache_folder,
+                                 "%s.%s.cache" % (self.cache_prefix, cache_id))
+            if os.path.isfile(cache_file):
+                if verbose:
+                    print "Reloading AsyncResults from %s" % cache_file
+                ar.load(cache_file)
+                submitted = True
+
+        if not submitted:
+            cmd_submit, id_reader = self.backends[self.backend]['cmd_submit']
+            self.write()
+            job_id = None
+            try:
+                from . utils import run_cmd
+                cmd_submit.append(self.filename)
+                job_id = id_reader(run_cmd(cmd_submit, self.remote,
+                                   self.workdir))
+                if job_id is None:
+                    print "Failed to submit job"
+                    from . status import FAILED
+                    status = FAILED
+                if verbose:
+                    print "  Job ID: %s" % job_id
+                from . status import PENDING
+                status = PENDING
+            except sp.CalledProcessError as e:
+                print "Failed to submit job: %s" % e
+                from . status import FAILED
+                status = FAILED
+
+            ar.remote = self.remote
+            ar.options = self.options.copy()
+            ar.cache_file = cache_file
+            ar.backend = self.backends[self.backend]
+            try:
+                from . utils import time_to_seconds
+                ar.sleep_interval = time_to_seconds(self.options['time']) / 10
+                if ar.sleep_interval < 10:
+                    ar.sleep_interval = 10
+                if ar.sleep_interval > 1800:
+                    ar.sleep_interval = 1800
+            except KeyError:
+                ar.sleep_interval = 60
+            ar._status = status
+            ar.job_id = job_id
+            if self.epilogue is not None:
+                epilogue = self.epilogue.format(**self.__dict__)
+                if not epilogue.startswith("#!"):
+                    epilogue = "#!" + self.shell + "\n" + epilogue
+                ar.epilogue = epilogue
+
+        if block:
+            result = ar.get()
+        else:
+            result = ar
+
+        ar.dump()
+
+        return result
+
+
+class AsyncResult(object):
+
+    def __init__(self, backend):
+        """Create a new AsyncResult instance"""
+        self.remote = None
+        self.options = None
+        self.cache_file = None
+        self.backend = backend
+        self.sleep_interval = 10
+        self.job_id = None
+        self._status = None
+        self.epilogue = None
+
+    @property
+    def status(self):
+        """Return the job status as one of the codes defined in the
+        `clusterjob.status` module.
+        finished, communicate with the cluster to determine the job's status.
+        """
+        from . status import COMPLETED, STATUS_CODES
+        if self._status >= COMPLETED:
+            return self._status
+        else:
+            from . utils import run_cmd
+            cmd_status, status_reader = self.backend['cmd_status_running']
+            for i, part in enumerate(cmd_status):
+                cmd_status[i] = part.format(**self.__dict__)
+            response = run_cmd(cmd_status, self.remote)
+            if response is None:
+                cmd_status, status_reader = self.backend['cmd_status_finished']
+                for i, part in enumerate(cmd_status):
+                    cmd_status[i] = part.format(**self.__dict__)
+            prev_status = self._status
+            self._status = status_reader(response)
+            if not self._status in STATUS_CODES:
+                raise ValueError("Invalid status code %s", self._status)
+            if prev_status != self._status:
+                if self._status >= COMPLETED:
+                    self.run_epilogue()
+                self.dump()
+            return self._status
+
+    def get(self, timeout=None):
+        """Return status"""
+        from . status import COMPLETED
+        status = self.status
+        if status >= COMPLETED:
+            return status
+        else:
+            self.wait(timeout)
+            return self.status
+
+    def dump(self, cache_file=None):
+        """Write dump out to file"""
+        if cache_file is None:
+            cache_file = self.cache_file
+        if cache_file is not None:
+            self.cache_file = cache_file
+            with open(cache_file, 'wb') as pickle_fh:
+                pickle.dump((self.remote, self.options, self.sleep_interval,
+                             self.job_id, self._status, self.epilogue),
+                            pickle_fh)
+
+    def load(self, cache_file):
+        """Read dump from file"""
+        self.cache_file = cache_file
+        with open(cache_file, 'rb') as pickle_fh:
+            self.remote, self.options, self.sleep_interval, self.job_id, \
+            self._status, self.epilogue = pickle.load(pickle_fh)
+
+
+    def wait(self, timeout=None):
+        """Wait until the result is available or until roughly timeout seconds
+        pass."""
+        from . status import COMPLETED
+        import time
+        spent_time = 0
+        sleep_seconds = int(self.sleep_interval)
+        while self.status < COMPLETED:
+            time.sleep(sleep_seconds)
+            spent_time += sleep_seconds
+            if timeout is not None:
+                if spent_time > timeout:
+                    return
+
+    def ready(self):
+        """Return whether the job has completed."""
+        from . status import COMPLETED
+        return (self.status >= COMPLETED)
+
+    def successful(self):
+        """Return True if the job finished with a COMPLETED status, False if it
+        finished with a CANCELLED or FAILED status. Raise an AssertionError if
+        the job has not completed"""
+        from . status import COMPLETED
+        status = self.status
+        assert status >= COMPLETED, "status is %s" % status
+        return (self.status == COMPLETED)
+
+    def cancel(self):
+        """Instruct the cluster to cancel the running job. Has no effect if
+        job is not running"""
+        from . status import CANCELLED, COMPLETED
+        from . utils import run_cmd
+        if self.status < COMPLETED:
+            return
+        cmd_cancel = self.backend['cmd_cancel']
+        for i, part in enumerate(cmd_cancel):
+            cmd_cancel[i] = part.format(**self.__dict__)
+        run_cmd(cmd_cancel, self.remote)
+        self._status = CANCELLED
+        self.dump()
+
+    def run_epilogue(self):
+        """Run the epilogue script"""
+        if self.epilogue is not None:
+            tempfilename = tempfile.mkstemp()[1]
+            with open(tempfilename, 'w') as epilogue_fh:
+                epilogue_fh.write(self.epilogue)
+            set_executable(tempfilename)
+            try:
+                sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
+            finally:
+                os.unlink(tempfilename)
+

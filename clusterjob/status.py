@@ -1,0 +1,17 @@
+"""Generalized status codes for submitted jobs"""
+PENDING   = -2
+RUNNING   = -1
+COMPLETED =  0
+CANCELLED =  1
+FAILED    =  2
+
+STATUS_CODES = [PENDING, RUNNING, COMPLETED, CANCELLED, FAILED]
+
+str_status = {
+ PENDING   : 'PENDING',
+ RUNNING   : 'RUNNING',
+ COMPLETED : 'COMPLETED',
+ CANCELLED : 'CANCELLED',
+ FAILED    : 'FAILED',
+}
+
