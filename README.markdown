@@ -58,9 +58,9 @@ re-submitting the job the the cluster.
     '''
 
     job1 = Job(script, jobname='job1', time='00:03:00', nodes=1, threads=1,
-               mem=8, stdout='job1.out', filename='job1.slr', epilogue=epilogue)
+               mem=8, stdout='job1.out', epilogue=epilogue)
     job2 = Job(script, jobname='job2', time='00:03:00', nodes=1, threads=1,
-               mem=8, stdout='job2.out', filename='job2.slr',
+               mem=8, stdout='job2.out',
                epilogue=epilogue.replace('job1', 'job2'))
 
     # Job submission immediately returns an AsyncResult object.

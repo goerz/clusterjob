@@ -63,7 +63,10 @@ class Job(object):
         placed, and from which the submission command will be called.
 
     filename: str
-        Name of file to which the job script will be written (inside workdir)
+        Name of file to which the job script will be written (inside workdir).
+        If not set explicitly set, the filename will be set from the job name
+        (`options['jobname']` attribute) together with a backend-specific file
+        extension
 
     prologue: str
         multiline shell script that will be executed *locally* in the current
@@ -244,10 +247,20 @@ class Job(object):
                     self.__dict__[kw] = self.__class__.__dict__[default_key]
         if self.shell is None:
             self.shell = '/bin/bash'
+        if self.filename is None:
+            self._default_filename()
 
         self.options.update(self.backends[self.backend]['default_opts'])
         self.options.update(self.default_opts)
         self.options.update(kwargs)
+
+    def _default_filename(self):
+        """If self.filename is None, attempt to set it from the jobname"""
+        if self.filename is None:
+            if 'jobname' in self.options:
+                self.filename = "%s.%s" \
+                                 % (self.options['jobname'],
+                                    self.backends[self.backend]['extension'])
 
     def __str__(self):
         """Return the string representation of the job, i.e. the fully rendered
@@ -279,6 +292,7 @@ class Job(object):
         """
         remote = self.remote
         if filename is None:
+            self._default_filename()
             filename = self.filename
             if self.workdir is not None:
                 filename = os.path.join(self.workdir, filename)
