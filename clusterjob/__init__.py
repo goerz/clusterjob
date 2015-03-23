@@ -410,9 +410,8 @@ class Job(object):
             job_id = None
             try:
                 from . utils import run_cmd
-                cmd_submit.append(self.filename)
-                job_id = id_reader(run_cmd(cmd_submit, self.remote,
-                                   self.workdir))
+                cmd = cmd_submit + [self.filename, ]
+                job_id = id_reader(run_cmd(cmd, self.remote, self.workdir))
                 if job_id is None:
                     print "Failed to submit job"
                     from . status import FAILED
@@ -483,16 +482,17 @@ class AsyncResult(object):
         else:
             from . utils import run_cmd
             cmd_status, status_reader = self.backend['cmd_status_running']
-            for i, part in enumerate(cmd_status):
-                cmd_status[i] = part.format(**self.__dict__)
-            response = run_cmd(cmd_status, self.remote, ignore_exit_code=True)
+            cmd = []
+            for part in cmd_status:
+                cmd.append(part.format(**self.__dict__))
+            response = run_cmd(cmd, self.remote, ignore_exit_code=True)
             status = status_reader(response)
             if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
-                for i, part in enumerate(cmd_status):
-                    cmd_status[i] = part.format(**self.__dict__)
-                response = run_cmd(cmd_status, self.remote,
-                                    ignore_exit_code=True)
+                cmd = []
+                for part in cmd_status:
+                    cmd.append(part.format(**self.__dict__))
+                response = run_cmd(cmd, self.remote, ignore_exit_code=True)
                 status = status_reader(response)
             prev_status = self._status
             self._status = status
@@ -569,9 +569,10 @@ class AsyncResult(object):
         if self.status < COMPLETED:
             return
         cmd_cancel = self.backend['cmd_cancel']
-        for i, part in enumerate(cmd_cancel):
-            cmd_cancel[i] = part.format(**self.__dict__)
-        run_cmd(cmd_cancel, self.remote)
+        cmd = []
+        for part in cmd_cancel:
+            cmd.append(part.format(**self.__dict__))
+        run_cmd(cmd, self.remote)
         self._status = CANCELLED
         self.dump()
 
