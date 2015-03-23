@@ -334,23 +334,30 @@ class Job(object):
             finally:
                 os.unlink(tempfilename)
 
-    def submit(self, block=False, cache_id=None, verbose=False):
+    def submit(self, block=False, cache_id=None, verbose=False, force=False):
         """
         Submit the job.
 
         Parameters
         ----------
 
-        block: boolean
+        block: boolean, optional
             If `block` is True, wait until the job is finished, and return the
             exit status code. Otherwise, return an AsyncResult object.
 
-        cache_id: str or None
+        cache_id: str or None, optional
             An ID uniquely defining the submission, used as identifier for the
             cached AscynResult object. If not given, the cache_id is determined
             internally. If an AsyncResult with a matching cache_id is present
             in the cache_folder, nothing is submitted to the cluster, and that
             AsyncResult object is returned
+
+        verbose: boolean, optional
+            If True, print information about submission o the screen
+
+        force: boolean, optional
+            If True, discard any existing cached AsyncResult object, ensuring
+            that the job is sent to the cluster.
         """
         assert self.filename is not None, 'jobscript must have a filename'
         if verbose:
@@ -377,10 +384,11 @@ class Job(object):
             cache_file = os.path.join(self.cache_folder,
                                  "%s.%s.cache" % (self.cache_prefix, cache_id))
             if os.path.isfile(cache_file):
-                if verbose:
-                    print "Reloading AsyncResults from %s" % cache_file
-                ar.load(cache_file)
-                submitted = True
+                if not force:
+                    if verbose:
+                        print "Reloading AsyncResults from %s" % cache_file
+                    ar.load(cache_file)
+                    submitted = True
 
         if not submitted:
             self._run_prologue()
