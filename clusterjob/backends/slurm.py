@@ -53,9 +53,10 @@ def get_job_id(response):
 
 
 def get_job_status(response):
-    """Return job job status code from the response of the sacct command"""
+    """Return job job status code from the response of the sacct/squeue
+    command"""
     slurm_status_mapping = {
-            'RUNNING': RUNNING,
+            'RUNNING'    : RUNNING,
             'CANCELLED'  : CANCELLED,
             'COMPLETED'  : COMPLETED,
             'CONFIGURING': PENDING,
@@ -72,13 +73,12 @@ def get_job_status(response):
             return slurm_status_mapping[line.strip()]
     return None
 
-
 backend = {
     'name': 'slurm',
     'prefix': '#SBATCH',
     'cmd_submit'         : (['sbatch', ],
                             get_job_id),
-    'cmd_status_running' : (['sacct', '--format=state', '-n', '-j {job_id}'],
+    'cmd_status_running' : (['squeue', '-h', '-o %T', '-j {job_id}'],
                             get_job_status),
     'cmd_status_finished': (['sacct', '--format=state', '-n', '-j {job_id}'],
                             get_job_status),
