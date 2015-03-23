@@ -4,7 +4,7 @@ SLURM backend
 from ..status import PENDING, RUNNING, COMPLETED, CANCELLED, FAILED
 
 opt_replacements = {
-    'name'   : ('--job-name',      lambda s: str(s).strip() ),
+    'jobname': ('--job-name',      lambda s: str(s).strip() ),
     'queue'  : ('--partition',     lambda s: str(s).strip() ),
     'time'   : ('--time',          lambda s: str(s).strip() ),
     'nodes'  : ('--nodes',         lambda s: str(s).strip() ),
@@ -85,7 +85,8 @@ backend = {
     'cmd_cancel'         : ['scancel', '{job_id}', ],
     'translate_options': translate_options,
     'default_opts': {
-        'nodes': 1
+        'nodes'  : 1,
+        'threads': 1,
     },
     'job_vars': {
         'XXX_JOB_ID'     : 'SLURM_JOB_ID',

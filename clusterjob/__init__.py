@@ -116,17 +116,17 @@ class Job(object):
     ... echo "Job Finished: " `date`
     ... exit 0
     ... '''
-    >>> job = Job(script, backend='slurm', name='printenv', queue='test',
+    >>> job = Job(script, backend='slurm', jobname='printenv', queue='test',
     ... time='00:05:00', nodes=1, threads=1, mem=100,
     ...  stdout='printenv.out', stderr='printenv.err')
     >>> print job
     #!/bin/bash
-    #SBATCH --name=printenv
-    #SBATCH --stdout=printenv.out
+    #SBATCH --output=printenv.out
     #SBATCH --mem=100
-    #SBATCH --queue=test
-    #SBATCH --threads=1
-    #SBATCH --stderr=printenv.err
+    #SBATCH --job-name=printenv
+    #SBATCH --partition=test
+    #SBATCH --cpus-per-task=1
+    #SBATCH --error=printenv.err
     #SBATCH --time=00:05:00
     #SBATCH --nodes=1
     <BLANKLINE>
@@ -171,7 +171,7 @@ class Job(object):
         if check_backend(backend):
             cls.backends[backend['name']] = backend
 
-    def __init__(self, jobscript, **kwargs):
+    def __init__(self, jobscript, jobname, **kwargs):
         """
         Keyword Arguments
         -----------------
@@ -182,8 +182,8 @@ class Job(object):
         command (e.g. sbatch for slurm or qsub for PBS). At a minimum, the
         following arguments should be supported:
 
-        name: str
-            Name of the job
+        jobname: str
+            Name of the job (mandatory)
 
         queue: str
             Name of queue/partition to which to submit the job
@@ -218,7 +218,7 @@ class Job(object):
             F='nodefile.txt'         -> -F nodefile.txt
 
         """
-        self.options = {}
+        self.options = {'jobname': jobname}
 
         self.jobscript = jobscript
 
@@ -338,15 +338,14 @@ class Job(object):
             in the cache_folder, nothing is submitted to the cluster, and that
             AsyncResult object is returned
         """
-        assert 'name' in self.options, 'Job must have a defined name'
         assert self.filename is not None, 'jobscript must have a filename'
         if verbose:
             if self.remote is None:
                 print "Submitting job %s locally" \
-                        % self.options['name']
+                        % self.options['jobname']
             else:
                 print "Submitting job %s on %s" \
-                        % (self.options['name'], self.remote)
+                        % (self.options['jobname'], self.remote)
         self._run_prologue()
 
         submitted = False

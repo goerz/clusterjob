@@ -57,11 +57,11 @@ re-submitting the job the the cluster.
         scp {remote}:~/job1.out .
     '''
 
-    job1 = Job(script, name='job1', time='00:03:00', nodes=1, threads=1, mem=8,
-            stdout='job1.out', filename='job1.slr', epilogue=epilogue)
-    job2 = Job(script, name='job2', time='00:03:00', nodes=1, threads=1, mem=8,
-            stdout='job2.out', filename='job2.slr',
-            epilogue=epilogue.replace('job1', 'job2'))
+    job1 = Job(script, jobname='job1', time='00:03:00', nodes=1, threads=1,
+               mem=8, stdout='job1.out', filename='job1.slr', epilogue=epilogue)
+    job2 = Job(script, jobname='job2', time='00:03:00', nodes=1, threads=1,
+               mem=8, stdout='job2.out', filename='job2.slr',
+               epilogue=epilogue.replace('job1', 'job2'))
 
     # Job submission immediately returns an AsyncResult object.
     # Note that these objects are persistent if a `cache_folder` is used:
@@ -75,4 +75,4 @@ re-submitting the job the the cluster.
     # job is completed on the cluster
     for job in jobs:
         print "job %s (%s): %s" \
-            % (job.options['name'], job.job_id, str_status[job.get()])
+            % (job.options['jobname'], job.job_id, str_status[job.get()])
