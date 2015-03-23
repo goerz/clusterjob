@@ -12,7 +12,7 @@ def set_executable(filename):
     os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
 
-def run_cmd(cmd, remote, workdir=None):
+def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
     r'''
     Run the given cmd in the given workdir, either locally or remotely, and
     return the combined stdout/stderr
@@ -30,6 +30,11 @@ def run_cmd(cmd, remote, workdir=None):
     workdir: str, optional
         Local or remote directory from which to run the command.
 
+    ignore_exit_code: boolean, optional
+        By default, subprocess.CalledProcessError will be raised if the call
+        has an exit code other than 0. This exception can be supressed by
+        passing `ignore_exit_code=False`
+
     Example
     -------
 
@@ -46,18 +51,24 @@ def run_cmd(cmd, remote, workdir=None):
     >>> shutil.rmtree(tempfolder)
     '''
     assert type(cmd) in [list, tuple], "cmd must be given as a list"
-    if remote is None: # run locally
-        if workdir is None:
+    try:
+        if remote is None: # run locally
+            if workdir is None:
+                return sp.check_output(cmd, stderr=sp.STDOUT)
+            else:
+                return sp.check_output(cmd, stderr=sp.STDOUT, cwd=workdir)
+        else: # run remotely
+            cmd = " ".join(cmd)
+            if workdir is None:
+                cmd = ['ssh', remote, cmd]
+            else:
+                cmd = ['ssh', remote, "'cd %s && %s'" % (workdir, cmd)]
             return sp.check_output(cmd, stderr=sp.STDOUT)
+    except sp.CalledProcessError as e:
+        if ignore_exit_code:
+            return e.output
         else:
-            return sp.check_output(cmd, stderr=sp.STDOUT, cwd=workdir)
-    else: # run remotely
-        cmd = " ".join(cmd)
-        if workdir is None:
-            cmd = ['ssh', remote, cmd]
-        else:
-            cmd = ['ssh', remote, "'cd %s && %s'" % (workdir, cmd)]
-        return sp.check_output(cmd, stderr=sp.STDOUT)
+            raise
 
 
 def time_to_seconds(time_str):
