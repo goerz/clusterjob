@@ -7,6 +7,7 @@ import os
 import subprocess as sp
 import tempfile
 import cPickle as pickle
+from glob import glob
 from .utils import set_executable
 
 class Job(object):
@@ -173,6 +174,13 @@ class Job(object):
         from . backends import check_backend
         if check_backend(backend):
             cls.backends[backend['name']] = backend
+
+    @classmethod
+    def clear_cache_folder(cls):
+        """Remove all files in the cache_folder"""
+        if cls.cache_folder is not None:
+            for file in glob(os.path.join(cls.cache_folder, '*')):
+                os.unlink(file)
 
     def __init__(self, jobscript, jobname, **kwargs):
         """
@@ -384,7 +392,12 @@ class Job(object):
             cache_file = os.path.join(self.cache_folder,
                                  "%s.%s.cache" % (self.cache_prefix, cache_id))
             if os.path.isfile(cache_file):
-                if not force:
+                if force:
+                    try:
+                        os.unlink(cache_file)
+                    except OSError:
+                        pass
+                else:
                     if verbose:
                         print "Reloading AsyncResults from %s" % cache_file
                     ar.load(cache_file)
