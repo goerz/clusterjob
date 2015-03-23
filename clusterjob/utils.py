@@ -73,21 +73,22 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
     try:
         if remote is None: # run locally
             if workdir is None:
-                return sp.check_output(cmd, stderr=sp.STDOUT)
+                response = sp.check_output(cmd, stderr=sp.STDOUT)
             else:
-                return sp.check_output(cmd, stderr=sp.STDOUT, cwd=workdir)
+                response = sp.check_output(cmd, stderr=sp.STDOUT, cwd=workdir)
         else: # run remotely
             cmd = " ".join(cmd)
             if workdir is None:
                 cmd = ['ssh', remote, cmd]
             else:
                 cmd = ['ssh', remote, "'cd %s && %s'" % (workdir, cmd)]
-            return sp.check_output(cmd, stderr=sp.STDOUT)
+            response = sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as e:
         if ignore_exit_code:
-            return e.output
+            response = e.output
         else:
             raise
+    return response
 
 
 def time_to_seconds(time_str):
