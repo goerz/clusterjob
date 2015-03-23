@@ -81,7 +81,7 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
             if workdir is None:
                 cmd = ['ssh', remote, cmd]
             else:
-                cmd = ['ssh', remote, "'cd %s && %s'" % (workdir, cmd)]
+                cmd = ['ssh', remote, 'cd %s && %s' % (workdir, cmd)]
             response = sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as e:
         if ignore_exit_code:
