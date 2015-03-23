@@ -411,15 +411,17 @@ class Job(object):
             try:
                 from . utils import run_cmd
                 cmd = cmd_submit + [self.filename, ]
-                job_id = id_reader(run_cmd(cmd, self.remote, self.workdir))
+                job_id = id_reader(run_cmd(cmd, self.remote, self.workdir,
+                                   ignore_exit_code=True))
                 if job_id is None:
                     print "Failed to submit job"
                     from . status import FAILED
                     status = FAILED
-                if verbose:
-                    print "  Job ID: %s" % job_id
-                from . status import PENDING
-                status = PENDING
+                else:
+                    if verbose:
+                        print "  Job ID: %s" % job_id
+                    from . status import PENDING
+                    status = PENDING
             except sp.CalledProcessError as e:
                 print "Failed to submit job: %s" % e
                 from . status import FAILED
