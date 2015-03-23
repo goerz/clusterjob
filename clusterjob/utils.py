@@ -12,6 +12,25 @@ def set_executable(filename):
     os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
 
+def write_file(filename, data):
+    """Write data to the file with the given filename"""
+    with open(filename, 'w') as out_fh:
+        out_fh.write(data)
+
+
+def read_file(filename):
+    """
+    Return the contents of the file with the given filename as a string
+
+    >>> write_file('read_write_file.txt', 'Hello World')
+    >>> read_file('read_write_file.txt')
+    'Hello World'
+    >>> os.unlink('read_write_file.txt')
+    """
+    with open(filename) as in_fh:
+        return in_fh.read()
+
+
 def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
     r'''
     Run the given cmd in the given workdir, either locally or remotely, and
