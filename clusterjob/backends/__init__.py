@@ -13,6 +13,9 @@ have the following structure of keys and values:
         prefix to be added before each submission options, in the header of the
         job script. E.g. '#SBATCH' for slurm and '#PBS' for PBS/Torque.
 
+    'extension': str
+        Default filename extension for job script files.
+
     'cmd_submit': tuple of (list, callable)
         The first element of the tuple is the shell command that is used for
         submission. It must take the name of the job script file as a

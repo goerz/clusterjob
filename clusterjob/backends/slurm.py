@@ -76,6 +76,7 @@ def get_job_status(response):
 backend = {
     'name': 'slurm',
     'prefix': '#SBATCH',
+    'extension' : 'slr',
     'cmd_submit'         : (['sbatch', ],
                             get_job_id),
     'cmd_status_running' : (['squeue', '-h', '-o %T', '-j {job_id}'],
