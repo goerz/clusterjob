@@ -360,7 +360,6 @@ class Job(object):
             else:
                 print "Submitting job %s on %s" \
                         % (self.options['jobname'], self.remote)
-        self._run_prologue()
 
         submitted = False
         if cache_id is None:
@@ -384,6 +383,7 @@ class Job(object):
                 submitted = True
 
         if not submitted:
+            self._run_prologue()
             cmd_submit, id_reader = self.backends[self.backend]['cmd_submit']
             self.write()
             job_id = None
@@ -411,7 +411,8 @@ class Job(object):
             ar.backend = self.backends[self.backend]
             try:
                 from . utils import time_to_seconds
-                ar.sleep_interval = time_to_seconds(self.options['time']) / 10
+                ar.sleep_interval \
+                = int(time_to_seconds(self.options['time']) / 10)
                 if ar.sleep_interval < 10:
                     ar.sleep_interval = 10
                 if ar.sleep_interval > 1800:
