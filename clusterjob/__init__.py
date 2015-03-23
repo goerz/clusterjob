@@ -450,13 +450,17 @@ class AsyncResult(object):
             cmd_status, status_reader = self.backend['cmd_status_running']
             for i, part in enumerate(cmd_status):
                 cmd_status[i] = part.format(**self.__dict__)
-            response = run_cmd(cmd_status, self.remote)
-            if response is None:
+            response = run_cmd(cmd_status, self.remote, ignore_exit_code=True)
+            status = status_reader(response)
+            if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
                 for i, part in enumerate(cmd_status):
                     cmd_status[i] = part.format(**self.__dict__)
+                response = run_cmd(cmd_status, self.remote,
+                                    ignore_exit_code=True)
+                status = status_reader(response)
             prev_status = self._status
-            self._status = status_reader(response)
+            self._status = status
             if not self._status in STATUS_CODES:
                 raise ValueError("Invalid status code %s", self._status)
             if prev_status != self._status:
