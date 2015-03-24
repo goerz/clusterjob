@@ -47,6 +47,10 @@ class Job(object):
         Internal counter to be used when no cache_id is specified during
         submission
 
+    debug_cmds: boolean
+        If set to True, write debug information about all external commands
+        (`utils.run_cmd` calls) to stdout.
+
     Attributes
     ----------
 
@@ -161,6 +165,7 @@ class Job(object):
     cache_folder = None
     cache_prefix = 'clusterjob'
     cache_counter = 0
+    debug_cmds = False
 
     @classmethod
     def register_backend(cls, backend):
@@ -393,6 +398,7 @@ class Job(object):
         cache_file = None
 
         ar = AsyncResult(backend=self.backends[self.backend])
+        ar.debug_cmds = self.debug_cmds
 
         if self.cache_folder is not None:
             mkdir(self.cache_folder)
@@ -417,6 +423,7 @@ class Job(object):
                             os.unlink(cache_file)
                             ar = \
                             AsyncResult(backend=self.backends[self.backend])
+                            ar.debug_cmds = self.debug_cmds
                             submitted = False
 
         if not submitted:
@@ -427,7 +434,8 @@ class Job(object):
             try:
                 cmd = cmd_submit + [self.filename, ]
                 job_id = id_reader(run_cmd(cmd, self.remote, self.workdir,
-                                   ignore_exit_code=True))
+                                           ignore_exit_code=True,
+                                           debug=self.debug_cmds))
                 if job_id is None:
                     print "Failed to submit job"
                     status = FAILED
@@ -509,6 +517,8 @@ class AsyncResult(object):
         is, and executed as a script in the current working directory.
     """
 
+    debug_cmds = False
+
     def __init__(self, backend):
         """Create a new AsyncResult instance"""
         from . status import CANCELLED
@@ -536,14 +546,16 @@ class AsyncResult(object):
             cmd = []
             for part in cmd_status:
                 cmd.append(part.format(**self.__dict__))
-            response = run_cmd(cmd, self.remote, ignore_exit_code=True)
+            response = run_cmd(cmd, self.remote, ignore_exit_code=True,
+                               debug=self.debug_cmds)
             status = status_reader(response)
             if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
                 cmd = []
                 for part in cmd_status:
                     cmd.append(part.format(**self.__dict__))
-                response = run_cmd(cmd, self.remote, ignore_exit_code=True)
+                response = run_cmd(cmd, self.remote, ignore_exit_code=True,
+                                   debug=self.debug_cmds)
                 status = status_reader(response)
             prev_status = self._status
             self._status = status
@@ -623,7 +635,8 @@ class AsyncResult(object):
         cmd = []
         for part in cmd_cancel:
             cmd.append(part.format(**self.__dict__))
-        run_cmd(cmd, self.remote)
+        run_cmd(cmd, self.remote, ignore_exit_code=False,
+                debug=self.debug_cmds)
         self._status = CANCELLED
         self.dump()
 
