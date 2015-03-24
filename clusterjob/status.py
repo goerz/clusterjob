@@ -1,4 +1,13 @@
-"""Generalized status codes for submitted jobs"""
+"""
+Generalized status codes for submitted jobs
+
+The status code are ordered such that
+
+    pending/running < completed successfully < completed with error
+
+An status code of 0 indicates succesful completion
+"""
+
 PENDING   = -2
 RUNNING   = -1
 COMPLETED =  0
