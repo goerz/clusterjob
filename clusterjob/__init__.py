@@ -9,6 +9,7 @@ import tempfile
 import cPickle as pickle
 from glob import glob
 from .utils import set_executable
+from textwrap import dedent
 
 class Job(object):
     """
@@ -344,6 +345,19 @@ class Job(object):
             set_executable(tempfilename)
             try:
                 sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
+            except sp.CalledProcessError as e:
+                print dedent(r'''
+                Prologue script did not exit cleanly.
+                CWD: {cwd}
+                prologue: ---
+                {prologue}
+                ---
+                response: ---
+                {response}
+                ---
+                ''').format(cwd=os.getcwd(), prologue=self.prologue,
+                            response=e.output)
+                raise
             finally:
                 os.unlink(tempfilename)
 
@@ -641,7 +655,12 @@ class AsyncResult(object):
         self.dump()
 
     def run_epilogue(self):
-        """Run the epilogue script"""
+        """
+        Run the epilogue script in the current working directory.
+
+        Raise sp.CalledProcessError if the script does not finish with with
+        exit code zero.
+        """
         if self.epilogue is not None:
             tempfilename = tempfile.mkstemp()[1]
             with open(tempfilename, 'w') as epilogue_fh:
@@ -649,6 +668,19 @@ class AsyncResult(object):
             set_executable(tempfilename)
             try:
                 sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
+            except sp.CalledProcessError as e:
+                print dedent(r'''
+                Epilogue script did not exit cleanly.
+                CWD: {cwd}
+                epilogue: ---
+                {epilogue}
+                ---
+                response: ---
+                {response}
+                ---
+                ''').format(cwd=os.getcwd(), epilogue=self.epilogue,
+                            response=e.output)
+                raise
             finally:
                 os.unlink(tempfilename)
 
