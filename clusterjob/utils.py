@@ -4,6 +4,10 @@ Collection of utility functions
 import os
 import stat
 import subprocess as sp
+try:
+    from shlex import quote
+except ImportError:
+    from pipes import quote
 
 
 def set_executable(filename):
@@ -31,7 +35,7 @@ def read_file(filename):
         return in_fh.read()
 
 
-def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
+def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
     r'''
     Run the given cmd in the given workdir, either locally or remotely, and
     return the combined stdout/stderr
@@ -54,6 +58,9 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
         has an exit code other than 0. This exception can be supressed by
         passing `ignore_exit_code=False`
 
+    debug: boolean, optional
+        If True, print the command that is executed and the response to stdout
+
     Example
     -------
 
@@ -72,6 +79,8 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
     assert type(cmd) in [list, tuple], "cmd must be given as a list"
     try:
         if remote is None: # run locally
+            if debug:
+                print "COMMAND: %s" % " ".join([quote(part) for part in cmd])
             if workdir is None:
                 response = sp.check_output(cmd, stderr=sp.STDOUT)
             else:
@@ -82,12 +91,16 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False):
                 cmd = ['ssh', remote, cmd]
             else:
                 cmd = ['ssh', remote, 'cd %s && %s' % (workdir, cmd)]
+            if debug:
+                print "COMMAND: %s" % " ".join([quote(part) for part in cmd])
             response = sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as e:
         if ignore_exit_code:
             response = e.output
         else:
             raise
+    if debug:
+        print "RESPONSE: ---\n%s\n---" % response
     return response
 
 
