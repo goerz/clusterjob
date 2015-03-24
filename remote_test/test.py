@@ -2,6 +2,7 @@
 from clusterjob import Job
 from clusterjob.utils import read_file
 from clusterjob.status import str_status
+Job.debug_cmds = True
 
 ###############################################################################
 Job.default_remote = 'clusteruser@mycluster'
@@ -13,5 +14,16 @@ job = Job(read_file('./jobscript.sh'), jobname='test', time='00:03:00',
           prologue=read_file('./prologue.sh'),
           epilogue=read_file('./epilogue.sh'))
 
+print "\n*** Submitting Job ***\n"
 ar = job.submit(verbose=True)
+
+print "\n*** Cancelling Job ***\n"
+ar.cancel()
+
+print "\n*** Resubmitting Job ***\n"
+ar = job.submit(verbose=True, retry=True)
+
+print "\n*** Waiting for  Job to finish ***\n"
 print str_status[ar.get()]
+
+print "\n*** DONE ***\n"

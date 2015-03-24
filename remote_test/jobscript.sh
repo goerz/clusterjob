@@ -8,6 +8,8 @@ echo "Job started on" `hostname` `date`
 echo "Current directory:" `pwd`
 echo "####################################################"
 
+cd $XXX_WORKDIR # superfluous for slurm
+
 echo "####################################################"
 echo "Full Environment:"
 printenv | tee out.log
