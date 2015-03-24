@@ -471,16 +471,54 @@ class Job(object):
 
 
 class AsyncResult(object):
+    """
+    Result of submitting a cluster job
+
+    Attributes
+    ----------
+
+    remote: str or None
+        The remote host on which the job is running. Passwordless ssh must be
+        set up to reach the remote. A value of None idicates that the job is
+        running locally
+
+    options: dict
+        copy of the `options` attribute of the Job() instance that created the
+        AsyncResult object
+
+    cache_file: str or None
+        The full path and name of the file to be used to cache the AsyncResult
+        object. The cache file will be written automatically anytime a change
+        in status is detected
+
+    backend: dict
+        A reference to the backend options dictionary for the backend under
+        which the job is running
+
+    sleep_interval: int
+        Numer of seconds to sleep between polls to the cluster scheduling
+        systems when waiting for the Job to finish
+
+    job_id: str
+        The Job ID assigned by the cluster scheduler
+
+    epilogue: str
+        Multiline script to be run once when the status changes from "running"
+        (pending/running) to "not running" (completed, cancelled, failed).
+        The contents of this variable will be written to a temporary file as
+        is, and executed as a script in the current working directory.
+    """
 
     def __init__(self, backend):
         """Create a new AsyncResult instance"""
+        from . status import CANCELLED
         self.remote = None
-        self.options = None
+        self.options = {}
         self.cache_file = None
         self.backend = backend
         self.sleep_interval = 10
-        self.job_id = None
-        self._status = None
+        self.job_id = ''
+        self._status = CANCELLED
         self.epilogue = None
 
     @property
