@@ -617,7 +617,7 @@ class AsyncResult(object):
         job is not running"""
         from . status import CANCELLED, COMPLETED
         from . utils import run_cmd
-        if self.status < COMPLETED:
+        if self.status > COMPLETED:
             return
         cmd_cancel = self.backend['cmd_cancel']
         cmd = []
