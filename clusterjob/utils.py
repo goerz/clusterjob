@@ -95,7 +95,8 @@ def time_to_seconds(time_str):
     """
     Convert a string describing a time duration into seconds. The supported
     formats are: "minutes", "minutes:seconds", "hours:minutes:seconds",
-    "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds"
+    "days-hours", "days-hours:minutes", "days-hours:minutes:seconds",
+    and "days:hours:minutes:seconds"
 
     >>> time_to_seconds('10')
     600
@@ -115,6 +116,8 @@ def time_to_seconds(time_str):
     90600
     >>> time_to_seconds('1-1:10:30')
     90630
+    >>> time_to_seconds('1:1:10:30')
+    90630
     >>> time_to_seconds('1 1:10:30')
     Traceback (most recent call last):
       ...
@@ -129,6 +132,8 @@ def time_to_seconds(time_str):
         re.compile(r'^(?P<days>\d+)-(?P<hours>\d+):(?P<minutes>\d+)$'),
         re.compile(
           r'^(?P<days>\d+)-(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)$'),
+        re.compile(
+          r'^(?P<days>\d+):(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)$'),
     ]
     seconds = 0
     for pattern in patterns:
