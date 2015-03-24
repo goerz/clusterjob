@@ -342,7 +342,8 @@ class Job(object):
             finally:
                 os.unlink(tempfilename)
 
-    def submit(self, block=False, cache_id=None, verbose=False, force=False):
+    def submit(self, block=False, cache_id=None, verbose=False, force=False,
+        retry=True):
         """
         Submit the job.
 
@@ -357,8 +358,8 @@ class Job(object):
             An ID uniquely defining the submission, used as identifier for the
             cached AscynResult object. If not given, the cache_id is determined
             internally. If an AsyncResult with a matching cache_id is present
-            in the cache_folder, nothing is submitted to the cluster, and that
-            AsyncResult object is returned
+            in the cache_folder, nothing is submitted to the cluster, and the
+            cached AsyncResult object is returned
 
         verbose: boolean, optional
             If True, print information about submission o the screen
@@ -366,7 +367,14 @@ class Job(object):
         force: boolean, optional
             If True, discard any existing cached AsyncResult object, ensuring
             that the job is sent to the cluster.
+
+        retry: boolean, optional
+            If True, and the existing cached AsyncResult indicates that the job
+            finished with an error (CANCELLED/FAILED), resubmit the job,
+            discard the cache and return a fresh AsyncResult object
         """
+        from . status import FAILED, CANCELLED, PENDING, str_status
+        from . utils import mkdir, run_cmd, time_to_seconds
         assert self.filename is not None, 'jobscript must have a filename'
         if verbose:
             if self.remote is None:
@@ -387,7 +395,6 @@ class Job(object):
         ar = AsyncResult(backend=self.backends[self.backend])
 
         if self.cache_folder is not None:
-            from .utils import mkdir
             mkdir(self.cache_folder)
             cache_file = os.path.join(self.cache_folder,
                                  "%s.%s.cache" % (self.cache_prefix, cache_id))
@@ -402,6 +409,15 @@ class Job(object):
                         print "Reloading AsyncResults from %s" % cache_file
                     ar.load(cache_file)
                     submitted = True
+                    if ar._status >= CANCELLED:
+                        if retry:
+                            if verbose:
+                                print "Cached run %s, resubmitting" \
+                                % str_status[ar._status]
+                            os.unlink(cache_file)
+                            ar = \
+                            AsyncResult(backend=self.backends[self.backend])
+                            submitted = False
 
         if not submitted:
             self._run_prologue()
@@ -409,22 +425,18 @@ class Job(object):
             self.write()
             job_id = None
             try:
-                from . utils import run_cmd
                 cmd = cmd_submit + [self.filename, ]
                 job_id = id_reader(run_cmd(cmd, self.remote, self.workdir,
                                    ignore_exit_code=True))
                 if job_id is None:
                     print "Failed to submit job"
-                    from . status import FAILED
                     status = FAILED
                 else:
                     if verbose:
                         print "  Job ID: %s" % job_id
-                    from . status import PENDING
                     status = PENDING
             except sp.CalledProcessError as e:
                 print "Failed to submit job: %s" % e
-                from . status import FAILED
                 status = FAILED
 
             ar.remote = self.remote
@@ -432,7 +444,6 @@ class Job(object):
             ar.cache_file = cache_file
             ar.backend = self.backends[self.backend]
             try:
-                from . utils import time_to_seconds
                 ar.sleep_interval \
                 = int(time_to_seconds(self.options['time']) / 10)
                 if ar.sleep_interval < 10:
