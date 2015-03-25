@@ -77,13 +77,15 @@ backend = {
     'name': 'slurm',
     'prefix': '#SBATCH',
     'extension' : 'slr',
-    'cmd_submit'         : (['sbatch', ],
+    'cmd_submit'         : (lambda job_script: ['sbatch', job_script],
                             get_job_id),
-    'cmd_status_running' : (['squeue', '-h', '-o %T', '-j {job_id}'],
+    'cmd_status_running' : (lambda job_id: \
+                            ['squeue', '-h', '-o %T', '-j %s' % job_id],
                             get_job_status),
-    'cmd_status_finished': (['sacct', '--format=state', '-n', '-j {job_id}'],
+    'cmd_status_finished': (lambda job_id: \
+                           ['sacct', '--format=state', '-n', '-j %s' % job_id],
                             get_job_status),
-    'cmd_cancel'         : ['scancel', '{job_id}', ],
+    'cmd_cancel'         : lambda job_id: ['scancel', str(job_id)],
     'translate_options': translate_options,
     'default_opts': {
         'nodes'  : 1,

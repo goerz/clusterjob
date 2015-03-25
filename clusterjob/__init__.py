@@ -446,7 +446,7 @@ class Job(object):
             self.write()
             job_id = None
             try:
-                cmd = cmd_submit + [self.filename, ]
+                cmd = cmd_submit(self.filename)
                 job_id = id_reader(run_cmd(cmd, self.remote, self.workdir,
                                            ignore_exit_code=True,
                                            debug=self.debug_cmds))
@@ -557,17 +557,13 @@ class AsyncResult(object):
         else:
             from . utils import run_cmd
             cmd_status, status_reader = self.backend['cmd_status_running']
-            cmd = []
-            for part in cmd_status:
-                cmd.append(part.format(**self.__dict__))
+            cmd = cmd_status(self.job_id)
             response = run_cmd(cmd, self.remote, ignore_exit_code=True,
                                debug=self.debug_cmds)
             status = status_reader(response)
             if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
-                cmd = []
-                for part in cmd_status:
-                    cmd.append(part.format(**self.__dict__))
+                cmd = cmd_status(self.job_id)
                 response = run_cmd(cmd, self.remote, ignore_exit_code=True,
                                    debug=self.debug_cmds)
                 status = status_reader(response)
@@ -646,9 +642,7 @@ class AsyncResult(object):
         if self.status > COMPLETED:
             return
         cmd_cancel = self.backend['cmd_cancel']
-        cmd = []
-        for part in cmd_cancel:
-            cmd.append(part.format(**self.__dict__))
+        cmd = cmd_cancel(self.job_id)
         run_cmd(cmd, self.remote, ignore_exit_code=False,
                 debug=self.debug_cmds)
         self._status = CANCELLED

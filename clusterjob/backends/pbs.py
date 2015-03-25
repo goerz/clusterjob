@@ -81,21 +81,24 @@ def get_job_status(response):
     if last_line.startswith('qstat: Unknown Job'):
         return COMPLETED
     else:
-        status = lines[-1].split()[4]
-        return pbs_status_mapping[status]
+        try:
+            status = lines[-1].split()[4]
+            return pbs_status_mapping[status]
+        except IndexError:
+            return None
 
 
 backend = {
     'name': 'pbs',
     'prefix': '#PBS',
     'extension' : 'pbs',
-    'cmd_submit'         : (['qsub', ],
+    'cmd_submit'         : (lambda job_script: ['qsub', job_script],
                             get_job_id),
-    'cmd_status_running' : (['qstat', '{job_id}'],
+    'cmd_status_running' : (lambda job_id: ['qstat', str(job_id)],
                             get_job_status),
-    'cmd_status_finished': (['qstat', '{job_id}'],
+    'cmd_status_finished': (lambda job_id: ['qstat', str(job_id)],
                             get_job_status),
-    'cmd_cancel'         : ['qdel', '{job_id}', ],
+    'cmd_cancel'         : lambda job_id: ['qdel', str(job_id) ],
     'translate_options': translate_options,
     'default_opts': {
         'nodes'  : 1,
