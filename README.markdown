@@ -1,15 +1,25 @@
 # clusterjob
 
 Lightweight utilities to manage workflows on traditional HPC cluster
-systems such as PBS or slurm.
+systems.
 
 The library provides the `Job` class that wraps around shell scripts, allowing
 them to be submitted to a local or remote HPC cluster scheduling system. The
 resource requirements (nodes, cpus, runtime, etc.) for the scheduler are stored
-in the attributes of the Job object.
+in the attributes of the Job object. At present, the following schedulars are
+supported as backends:
+
+*   [SLURM](https://computing.llnl.gov/linux/slurm/) (default)
+*   [Torque/PBS](http://www.adaptivecomputing.com/products/open-source/torque/)
+*   [LPBS](https://github.com/goerz/LPBS)
+*   [Sun Grid Engine (SGE)](http://en.wikipedia.org/wiki/Oracle_Grid_Engine) (deprecated)
+
+Support for the
+[Univa Grid Engine (UGE)](http://www.univa.com/products/grid-engine.php) and
+[LSF](http://www.platform.com/Products/platform-lsf) is planned.
 
 Submitting the Job object to a cluster with the `submit` method immediately
-returns an AsyncResult object that is a superset of the interface of
+returns an `AsyncResult` object that is a superset of the interface of
 `multiprocessing.pool.AsyncResult`, and is similar to the IPython
 `mp.pool.AsyncResult`.
 
