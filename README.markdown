@@ -1,7 +1,6 @@
 # clusterjob
 
-Lightweight utilities to manage workflows on traditional HPC cluster
-systems.
+Python library to manage workflows on traditional HPC cluster systems.
 
 The library provides the `Job` class that wraps around shell scripts, allowing
 them to be submitted to a local or remote HPC cluster scheduling system. The
