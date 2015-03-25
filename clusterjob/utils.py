@@ -43,8 +43,11 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
     Parameters
     ----------
 
-    cmd: list of str
-        Command to execute, as list of command and options
+    cmd: list of str or str
+        Command to execute, as list consisting of the command, and options.
+        Alternatively, the command can be given a single string, which will
+        then be executed as a shell command. Only use shell commands when
+        necessary, e.g. when the command involves a pipe.
 
     remote: None or str
         If None, run command locally. Otherwise, run on the given host (via
@@ -74,19 +77,34 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
     >>> run_cmd(['./test.sh', 'World'], remote=None, workdir=tempfolder)
     'Hello World\n'
 
+    >>> run_cmd("./test.sh World | tr '[:upper:]' '[:lower:]'", remote=None,
+    ...         workdir=tempfolder)
+    'hello world\n'
+
     >>> shutil.rmtree(tempfolder)
     '''
-    assert type(cmd) in [list, tuple], "cmd must be given as a list"
+    if type(cmd) in [list, tuple]:
+        use_shell = False
+    else:
+        cmd = str(cmd)
+        use_shell = True
     try:
         if remote is None: # run locally
             if debug:
-                print "COMMAND: %s" % " ".join([quote(part) for part in cmd])
+                if use_shell:
+                    print "COMMAND: %s" % cmd
+                else:
+                    print "COMMAND: %s" \
+                          % " ".join([quote(part) for part in cmd])
             if workdir is None:
-                response = sp.check_output(cmd, stderr=sp.STDOUT)
+                response = sp.check_output(cmd, stderr=sp.STDOUT,
+                                           shell=use_shell)
             else:
-                response = sp.check_output(cmd, stderr=sp.STDOUT, cwd=workdir)
+                response = sp.check_output(cmd, stderr=sp.STDOUT, cwd=workdir,
+                                           shell=use_shell)
         else: # run remotely
-            cmd = " ".join(cmd)
+            if not use_shell:
+                cmd = " ".join(cmd)
             if workdir is None:
                 cmd = ['ssh', remote, cmd]
             else:
