@@ -113,5 +113,11 @@ backend = {
         '$XXX_JOB_NAME'   : '$PBS_JOBNAME',
         '$XXX_ARRAY_INDEX': '$PBS_ARRAYID',
         '$XXX_NODELIST'   : '`cat $PBS_NODEFILE`',
+        '${XXX_JOB_ID}'     : '${PBS_JOB_ID}',
+        '${XXX_WORKDIR}'    : '${PBS_O_WORKDIR}',
+        '${XXX_HOST}'       : '${PBS_O_HOST}',
+        '${XXX_JOB_NAME}'   : '${PBS_JOBNAME}',
+        '${XXX_ARRAY_INDEX}': '${PBS_ARRAYID}',
+        '${XXX_NODELIST}'   : '`cat $PBS_NODEFILE`',
     },
 }

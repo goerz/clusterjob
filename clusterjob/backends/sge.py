@@ -111,5 +111,11 @@ backend = {
         '$XXX_JOB_NAME'   : '$JOBNAME',
         '$XXX_ARRAY_INDEX': '$SGE_TASK_ID',
         '$XXX_NODELIST'   : '$HOSTNAME',
+        '${XXX_JOB_ID}'     : '${JOB_ID}',
+        '${XXX_WORKDIR}'    : '${SGE_O_WORKDIR}',
+        '${XXX_HOST}'       : '${SGE_O_HOST}',
+        '${XXX_JOB_NAME}'   : '${JOBNAME}',
+        '${XXX_ARRAY_INDEX}': '${SGE_TASK_ID}',
+        '${XXX_NODELIST}'   : '${HOSTNAME}',
     },
 }

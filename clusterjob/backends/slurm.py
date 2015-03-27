@@ -98,5 +98,11 @@ backend = {
         '$XXX_JOB_NAME'   : '$SLURM_JOB_NAME',
         '$XXX_ARRAY_INDEX': '$SLURM_ARRAY_TASK_ID',
         '$XXX_NODELIST'   : '$SLURM_JOB_NODELIST',
+        '${XXX_JOB_ID}'     : '${SLURM_JOB_ID}',
+        '${XXX_WORKDIR}'    : '${SLURM_SUBMIT_DIR}',
+        '${XXX_HOST}'       : '${SLURM_SUBMIT_HOST}',
+        '${XXX_JOB_NAME}'   : '${SLURM_JOB_NAME}',
+        '${XXX_ARRAY_INDEX}': '${SLURM_ARRAY_TASK_ID}',
+        '${XXX_NODELIST}'   : '${SLURM_JOB_NODELIST}',
     },
 }
