@@ -194,8 +194,13 @@ class Job(object):
         the wrong structure, an AssertionError will be raised.
         """
         from . backends import check_backend
-        if check_backend(backend):
-            cls.backends[backend['name']] = backend
+        try:
+            if check_backend(backend):
+                cls.backends[backend['name']] = backend
+        except AssertionError as e:
+            import pprint
+            pp = pprint.PrettyPrinter(indent=4)
+            print "Invalid backend:\n%s\n\n%s" % (pp.pformat(backend), e)
 
     @classmethod
     def clear_cache_folder(cls):
