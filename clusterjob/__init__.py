@@ -324,8 +324,10 @@ class Job(object):
         Write out the fully rendered jobscript to file. If filename is not
         None, write to the given *local* file. Otherwise, write to the local or
         remote file specified in the filename attribute, in the folder
-        specified by the rootdir and workdir attributes
+        specified by the rootdir and workdir attributes. The folder will be
+        created if it does not exist already.
         """
+        from . utils import run_cmd
         remote = self.remote
         if filename is None:
             self._default_filename()
@@ -336,6 +338,9 @@ class Job(object):
 
         if filename is None:
             raise ValueError("filename not given")
+        filepath = os.path.split(filename)[0]
+        run_cmd(['mkdir', '-p', filepath], remote, ignore_exit_code=False,
+                debug=self.debug_cmds)
 
         # Write / Upload
         if remote is None:
