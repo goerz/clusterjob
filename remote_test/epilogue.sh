@@ -1,4 +1,4 @@
-rsync -av {remote}:{workdir} ./runfolder
-ssh {remote} 'rm -f {workdir}/*'
-ssh {remote} 'rm -f {workdir}/.*'
-ssh {remote} 'rmdir {workdir}'
+rsync -av {remote}:{fulldir}/ ./runfolder
+ssh {remote} 'rm -f {fulldir}/*'
+ssh {remote} 'rm -f {fulldir}/.*'
+ssh {remote} 'rmdir {fulldir}'

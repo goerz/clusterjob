@@ -35,7 +35,8 @@ def read_file(filename):
         return in_fh.read()
 
 
-def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
+def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
+    debug=False):
     r'''
     Run the given cmd in the given workdir, either locally or remotely, and
     return the combined stdout/stderr
@@ -53,8 +54,17 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
         If None, run command locally. Otherwise, run on the given host (via
         SSH)
 
+    rootdir: str, optional
+        Local or remote root directory. The `workdir` variable is taken
+        relative to `rootdir`. If not specified, effectively the current
+        working directory is used as the root for local commands, and the home
+        directory for remote commands. Note that `~` may be used to indicate
+        the home directory locally or remotely.
+
     workdir: str, optional
-        Local or remote directory from which to run the command.
+        Local or remote directory from which to run the command, relative to
+        `rootdir`. If `rootdir` is empty, `~` may be used to indicate the home
+        directory.
 
     ignore_exit_code: boolean, optional
         By default, subprocess.CalledProcessError will be raised if the call
@@ -83,6 +93,7 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
 
     >>> shutil.rmtree(tempfolder)
     '''
+    workdir = os.path.join(rootdir, workdir)
     if type(cmd) in [list, tuple]:
         use_shell = False
     else:
@@ -90,13 +101,14 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
         use_shell = True
     try:
         if remote is None: # run locally
+            workdir = os.path.expanduser(workdir)
             if debug:
                 if use_shell:
                     print "COMMAND: %s" % cmd
                 else:
                     print "COMMAND: %s" \
                           % " ".join([quote(part) for part in cmd])
-            if workdir is None:
+            if workdir == '':
                 response = sp.check_output(cmd, stderr=sp.STDOUT,
                                            shell=use_shell)
             else:
@@ -105,7 +117,7 @@ def run_cmd(cmd, remote, workdir=None, ignore_exit_code=False, debug=False):
         else: # run remotely
             if not use_shell:
                 cmd = " ".join(cmd)
-            if workdir is None:
+            if workdir == '':
                 cmd = ['ssh', remote, cmd]
             else:
                 cmd = ['ssh', remote, 'cd %s && %s' % (workdir, cmd)]

@@ -10,7 +10,7 @@ Job.default_backend = 'slurm'
 ###############################################################################
 
 job = Job(read_file('./jobscript.sh'), jobname='test', time='00:03:00',
-          nodes=1, threads=1, mem=8, workdir='~/jobs/remote_test',
+          nodes=1, threads=1, mem=8, rootdir='~/jobs', workdir='./remote_test',
           prologue=read_file('./prologue.sh'),
           epilogue=read_file('./epilogue.sh'))
 

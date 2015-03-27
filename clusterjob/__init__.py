@@ -37,6 +37,9 @@ class Job(object):
     default_remote: str
         The remote to be used when submitting the job script
 
+    default_rootdir: str
+        The default root for all working directories.
+
     cache_folder: str
         Local folder in which to cache the AsyncResult instances resulting from
         job submission
@@ -61,27 +64,39 @@ class Job(object):
     shell: str
         shell that is used to execute runscript
 
-    remote: str
+    remote: str or None
         remote server on which to execute submit commands
+
+    rootdir: str
+        root directory for workdir
 
     workdir: str
         work directory (local or remote) in which the job script file will be
-        placed, and from which the submission command will be called.
+        placed, and from which the submission command will be called. Relative
+        to `rootdir`.
 
     filename: str
-        Name of file to which the job script will be written (inside workdir).
-        If not set explicitly set, the filename will be set from the job name
-        (`options['jobname']` attribute) together with a backend-specific file
-        extension
+        Name of file to which the job script will be written (inside
+        rootdir/workdir).  If not set explicitly set, the filename will be set
+        from the job name (`options['jobname']` attribute) together with a
+        backend-specific file extension
 
     prologue: str
         multiline shell script that will be executed *locally* in the current
         working directory before submitting the job. If the script does not
         contain a shebang, the shell specified in the `shell` attribute will be
-        used. The body of the script will be formatted with the job attributes,
-        e.g. '{remote}' will be replaced by the value of the `remote`
-        attribute. The main purpose of the prologue script is to move data to a
-        remote cluster.
+        used. The body of the script will be formatted with the Job attributes
+        (at submission time); e.g., '{remote}' will be replaced by the value of
+        the corresponding attribute. In addition, '{fulldir}' will be replaced
+        by
+
+            os.path.join(rootdir, workdir)
+
+        The main purpose of the prologue script is to move data to a remote
+        cluster, e.g. via the commands
+
+            ssh {remote} 'mkdir -p {fulldir}'
+            rsync -av {workdir}/ {remote}:{fulldir}
 
     epilogue: str
         multiline shell script that will be executed *locally* in the current
@@ -163,6 +178,7 @@ class Job(object):
     default_backend = 'slurm'
     default_shell = None
     default_remote = None
+    default_rootdir = ''
     cache_folder = None
     cache_prefix = 'clusterjob'
     cache_counter = 0
@@ -193,11 +209,12 @@ class Job(object):
         Keyword Arguments
         -----------------
 
-        The backend, shell, remote, workdir, filename, prologue, and
+        The backend, shell, remote, rootdir, workdir, filename, prologue, and
         epilogue arguments specify the value of the corresponding attributes.
-        All other keyword arguments are used as options for the job sumbmission
-        command (e.g. sbatch for slurm or qsub for PBS). At a minimum, the
-        following arguments should be supported:
+        All other keyword arguments are stored in the `options` dict attribute,
+        to be used as options for the job sumbmission command (e.g. sbatch for
+        slurm or qsub for PBS). At a minimum, the following arguments are
+        supported:
 
         jobname: str
             Name of the job (mandatory)
@@ -223,17 +240,18 @@ class Job(object):
         stderr: str
             name of file to which to write the jobs stderr
 
-        Custom backends may define further options. Unknown arguments are
-        passed directly as arguments to the backend's job submission command
-        . Single-letter argument
-        names are prepended with '-', multi-letter argument names with '--'.
-        An argument with boolean values is passed without any value iff the
-        value is True:
+        Custom backends may define further options, or even support arbitrary
+        additional options. For example, in the default SLURM backend,
+        unknown options are passed directly as arguments to `sbatch`, where
+        single-letter argument names are prepended with '-', multi-letter
+        argument names with '--'. An argument with boolean values is passed
+        without any value iff the value is True:
 
             contiguous=True          -> --contiguous
             dependency='after:12454' -> --dependency=after:12454
             F='nodefile.txt'         -> -F nodefile.txt
 
+        All backends are encouraged to implement a similar behavior.
         """
         self.options = {'jobname': jobname}
 
@@ -249,8 +267,8 @@ class Job(object):
                                   globals(), locals(), ['backend', ], -1)
                 self.register_backend(mod.backend)
 
-        for kw in ['backend', 'shell', 'remote', 'workdir', 'filename',
-        'prologue', 'epilogue']:
+        for kw in ['backend', 'shell', 'remote', 'rootdir', 'workdir',
+        'filename', 'prologue', 'epilogue']:
             self.__dict__[kw] = None
             if kw in kwargs:
                 self.__dict__[kw] = kwargs[kw]
@@ -261,6 +279,10 @@ class Job(object):
                     self.__dict__[kw] = self.__class__.__dict__[default_key]
         if self.shell is None:
             self.shell = '/bin/bash'
+        if self.rootdir is None:
+            self.rootdir = ''
+        if self.workdir is None:
+            self.workdir = ''
         if self.filename is None:
             self._default_filename()
 
@@ -302,14 +324,13 @@ class Job(object):
         Write out the fully rendered jobscript to file. If filename is not
         None, write to the given *local* file. Otherwise, write to the local or
         remote file specified in the filename attribute, in the folder
-        specified by the workdir attribute
+        specified by the rootdir and workdir attributes
         """
         remote = self.remote
         if filename is None:
             self._default_filename()
             filename = self.filename
-            if self.workdir is not None:
-                filename = os.path.join(self.workdir, filename)
+            filename = os.path.join(self.rootdir, self.workdir, filename)
         else:
             remote = None
 
@@ -336,7 +357,9 @@ class Job(object):
     def _run_prologue(self):
         """Render and run the prologue script"""
         if self.prologue is not None:
-            prologue = self.prologue.format(**self.__dict__)
+            prologue = self.prologue.format(
+                           fulldir=os.path.join(self.rootdir, self.workdir),
+                           **self.__dict__)
             if not prologue.startswith("#!"):
                 prologue = "#!" + self.shell + "\n" + prologue
             tempfilename = tempfile.mkstemp()[1]
@@ -447,8 +470,8 @@ class Job(object):
             job_id = None
             try:
                 cmd = cmd_submit(self.filename)
-                job_id = id_reader(run_cmd(cmd, self.remote, self.workdir,
-                                           ignore_exit_code=True,
+                job_id = id_reader(run_cmd(cmd, self.remote, self.rootdir,
+                                           self.workdir, ignore_exit_code=True,
                                            debug=self.debug_cmds))
                 if job_id is None:
                     print "Failed to submit job"
@@ -477,7 +500,9 @@ class Job(object):
             ar._status = status
             ar.job_id = job_id
             if self.epilogue is not None:
-                epilogue = self.epilogue.format(**self.__dict__)
+                epilogue = self.epilogue.format(
+                              fulldir=os.path.join(self.rootdir, self.workdir),
+                              **self.__dict__)
                 if not epilogue.startswith("#!"):
                     epilogue = "#!" + self.shell + "\n" + epilogue
                 ar.epilogue = epilogue
@@ -643,7 +668,7 @@ class AsyncResult(object):
             return
         cmd_cancel = self.backend['cmd_cancel']
         cmd = cmd_cancel(self.job_id)
-        run_cmd(cmd, self.remote, ignore_exit_code=False,
+        run_cmd(cmd, self.remote, ignore_exit_code=True,
                 debug=self.debug_cmds)
         self._status = CANCELLED
         self.dump()
