@@ -353,9 +353,9 @@ class Job(object):
                 run_fh.write(str(self))
             set_executable(filename)
         else:
-            tempfilename = tempfile.mkstemp()[1]
-            with open(tempfilename, 'w') as run_fh:
+            with tempfile.NamedTemporaryFile('w', delete=False) as run_fh:
                 run_fh.write(str(self))
+                tempfilename = run_fh.name
             set_executable(tempfilename)
             try:
                 sp.check_output(
@@ -372,9 +372,9 @@ class Job(object):
                            **self.__dict__)
             if not prologue.startswith("#!"):
                 prologue = "#!" + self.shell + "\n" + prologue
-            tempfilename = tempfile.mkstemp()[1]
-            with open(tempfilename, 'w') as prologue_fh:
+            with tempfile.NamedTemporaryFile('w', delete=False) as prologue_fh:
                 prologue_fh.write(prologue)
+                tempfilename = prologue_fh.name
             set_executable(tempfilename)
             try:
                 sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
@@ -691,9 +691,9 @@ class AsyncResult(object):
         exit code zero.
         """
         if self.epilogue is not None:
-            tempfilename = tempfile.mkstemp()[1]
-            with open(tempfilename, 'w') as epilogue_fh:
+            with tempfile.NamedTemporaryFile('w', delete=False) as epilogue_fh:
                 epilogue_fh.write(self.epilogue)
+                tempfilename = epilogue_fh.name
             set_executable(tempfilename)
             try:
                 sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
