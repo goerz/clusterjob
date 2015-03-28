@@ -58,6 +58,15 @@ class Job(object):
     Attributes
     ----------
 
+    jobscript: str
+        Multiline job script. Should not contain a shebang or backend-specific
+        submission headers. It will be rendered for the given backend by
+        * adding a shebang (based on the `shell` attribute)
+        * adding job submission headers (based on the options attribute)
+        * applying the mappings defined in the `job_vars` entry of the backend
+        * formatting the script with the attributes of the job attributes (e.g.
+          {rootdir} will be replaced by the value of the `rootdir` attribute.
+
     backend: str
         name of backend, must be a key in the backends class dictionary
 
@@ -112,15 +121,8 @@ class Job(object):
         be translated according to the backend and passed to the submission
         command
 
-    jobscript: str
-        Multiline job script. Should not contain a shebang or backend-specific
-        submission headers. It will be renedered for the given backend by
-        adding a shebang, the job submission headers (based on the `options`
-        attribute), and by applying the mappings defined in the 'job_vars'
-        entry of the backend
-
-    Example
-    -------
+    Examples
+    --------
 
     >>> script = r'''
     ... echo "####################################################"
@@ -142,7 +144,7 @@ class Job(object):
     ... '''
     >>> job = Job(script, backend='slurm', jobname='printenv', queue='test',
     ... time='00:05:00', nodes=1, threads=1, mem=100,
-    ...  stdout='printenv.out', stderr='printenv.err')
+    ... stdout='printenv.out', stderr='printenv.err')
     >>> print job
     #!/bin/bash
     #SBATCH --output=printenv.out
@@ -170,6 +172,24 @@ class Job(object):
     <BLANKLINE>
     echo "Job Finished: " `date`
     exit 0
+    <BLANKLINE>
+
+    Python's ability to add arbitrary attributes to an existing object together
+    with the formatting step in rendering the job script allow for a a powerful
+    (but hacky) way to use arbitrary template variables in the job script:
+
+    >>> script = r'''
+    ... echo {myvar}
+    ... '''
+    >>> job = Job(script, jobname='myvar_test')
+    >>> job.myvar = 'Hello'
+    >>> print job
+    #!/bin/bash
+    #SBATCH --nodes=1
+    #SBATCH --cpus-per-task=1
+    #SBATCH --job-name=myvar_test
+    <BLANKLINE>
+    echo Hello
     <BLANKLINE>
     """
 
@@ -211,18 +231,25 @@ class Job(object):
 
     def __init__(self, jobscript, jobname, **kwargs):
         """
+        Arguments
+        ---------
+
+        jobscript: str
+            Body (template) for the jobscript as multiline string
+
+        jobname: str
+            Name of the job
+
+
         Keyword Arguments
         -----------------
 
         The backend, shell, remote, rootdir, workdir, filename, prologue, and
         epilogue arguments specify the value of the corresponding attributes.
         All other keyword arguments are stored in the `options` dict attribute,
-        to be used as options for the job sumbmission command (e.g. sbatch for
+        to be used as options for the job submission command (e.g. sbatch for
         slurm or qsub for PBS). At a minimum, the following arguments are
         supported:
-
-        jobname: str
-            Name of the job (mandatory)
 
         queue: str
             Name of queue/partition to which to submit the job
@@ -306,7 +333,6 @@ class Job(object):
     def __str__(self):
         """Return the string representation of the job, i.e. the fully rendered
         jobscript"""
-
         opt_translator = self.backends[self.backend]['translate_options']
         opt_array = opt_translator(self.options)
         prefix = self.backends[self.backend]['prefix']
@@ -322,7 +348,7 @@ class Job(object):
             if not line.startswith("#!"):
                 jobscript_lines.append(line)
         jobscript = "\n".join(jobscript_lines)
-        return jobscript
+        return jobscript.format(**self.__dict__)
 
     def write(self, filename=None):
         """
@@ -408,7 +434,7 @@ class Job(object):
 
         cache_id: str or None, optional
             An ID uniquely defining the submission, used as identifier for the
-            cached AscynResult object. If not given, the cache_id is determined
+            cached AsyncResult object. If not given, the cache_id is determined
             internally. If an AsyncResult with a matching cache_id is present
             in the cache_folder, nothing is submitted to the cluster, and the
             cached AsyncResult object is returned
@@ -459,7 +485,7 @@ class Job(object):
                         pass
                 else:
                     if verbose:
-                        print "Reloading AsyncResults from %s" % cache_file
+                        print "Reloading AsyncResult from %s" % cache_file
                     ar.load(cache_file)
                     submitted = True
                     if ar._status >= CANCELLED:
@@ -536,7 +562,7 @@ class AsyncResult(object):
 
     remote: str or None
         The remote host on which the job is running. Passwordless ssh must be
-        set up to reach the remote. A value of None idicates that the job is
+        set up to reach the remote. A value of None indicates that the job is
         running locally
 
     options: dict
@@ -561,7 +587,7 @@ class AsyncResult(object):
 
     epilogue: str
         Multiline script to be run once when the status changes from "running"
-        (pending/running) to "not running" (completed, cancelled, failed).
+        (pending/running) to "not running" (completed, canceled, failed).
         The contents of this variable will be written to a temporary file as
         is, and executed as a script in the current working directory.
     """
@@ -687,7 +713,7 @@ class AsyncResult(object):
         """
         Run the epilogue script in the current working directory.
 
-        Raise sp.CalledProcessError if the script does not finish with with
+        Raise sp.CalledProcessError if the script does not finish with
         exit code zero.
         """
         if self.epilogue is not None:
