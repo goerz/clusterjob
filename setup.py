@@ -12,4 +12,17 @@ setup(name='clusterjob',
       license='GPL',
       packages=['clusterjob', 'clusterjob.backends'],
       scripts=[],
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'Environment :: Web Environment',
+          'Intended Audience :: Science/Research',
+          'License :: OSI Approved :: MIT License',
+          'Natural Language :: English',
+          'Topic :: Scientific/Engineering',
+          'Topic :: System :: Clustering',
+          'Topic :: Utilities',
+          'Operating System :: POSIX',
+          'Programming Language :: Python :: 2 :: Only',
+      ]
      )
