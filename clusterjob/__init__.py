@@ -40,6 +40,9 @@ class Job(object):
     default_rootdir: str
         The default root for all working directories.
 
+    default_sleep_interval: int or None
+        The default value of the `sleep_interval` attribute.
+
     cache_folder: str
         Local folder in which to cache the AsyncResult instances resulting from
         job submission
@@ -115,6 +118,12 @@ class Job(object):
         object resulting from the job submission. The main purpose of the
         epilogue script is to move data from a remote cluster upon completion
         of the job.
+
+    sleep_interval: int or None
+        Value for the `sleep_interval` attribute of the AsyncResult instance
+        that is created upon submission. If None, the value for that attribute
+        will be automatically determined between 10 and 1800 seconds, depending
+        on the projected runtime of the job.
 
     options: dict
         Dictionary of submission options describing resource requirements. Will
@@ -199,6 +208,7 @@ class Job(object):
     default_shell = None
     default_remote = None
     default_rootdir = ''
+    default_sleep_interval = None
     cache_folder = None
     cache_prefix = 'clusterjob'
     cache_counter = 0
@@ -244,8 +254,10 @@ class Job(object):
         Keyword Arguments
         -----------------
 
-        The backend, shell, remote, rootdir, workdir, filename, prologue, and
-        epilogue arguments specify the value of the corresponding attributes.
+        The backend, shell, remote, rootdir, workdir, filename, prologue,
+        epilogue, and sleep_interval arguments specify the value of the
+        corresponding attributes.
+
         All other keyword arguments are stored in the `options` dict attribute,
         to be used as options for the job submission command (e.g. sbatch for
         slurm or qsub for PBS). At a minimum, the following arguments are
@@ -300,7 +312,7 @@ class Job(object):
                 self.register_backend(mod.backend)
 
         for kw in ['backend', 'shell', 'remote', 'rootdir', 'workdir',
-        'filename', 'prologue', 'epilogue']:
+        'filename', 'prologue', 'epilogue', 'sleep_interval']:
             self.__dict__[kw] = None
             if kw in kwargs:
                 self.__dict__[kw] = kwargs[kw]
@@ -524,15 +536,18 @@ class Job(object):
             ar.options = self.options.copy()
             ar.cache_file = cache_file
             ar.backend = self.backends[self.backend]
-            try:
-                ar.sleep_interval \
-                = int(time_to_seconds(self.options['time']) / 10)
-                if ar.sleep_interval < 10:
-                    ar.sleep_interval = 10
-                if ar.sleep_interval > 1800:
-                    ar.sleep_interval = 1800
-            except KeyError:
-                ar.sleep_interval = 60
+            if self.sleep_interval is not None:
+                ar.sleep_interval = self.sleep_interval
+            else:
+                try:
+                    ar.sleep_interval \
+                    = int(time_to_seconds(self.options['time']) / 10)
+                    if ar.sleep_interval < 10:
+                        ar.sleep_interval = 10
+                    if ar.sleep_interval > 1800:
+                        ar.sleep_interval = 1800
+                except KeyError:
+                    ar.sleep_interval = 60
             ar._status = status
             ar.job_id = job_id
             if self.epilogue is not None:
