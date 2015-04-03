@@ -5,12 +5,15 @@ from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 import os
 import stat
+import sys
 import logging
 import subprocess as sp
 try:
     from shlex import quote
 except ImportError:
     from pipes import quote
+
+CMD_RESPONSE_ENCODING = 'utf-8'
 
 
 def set_executable(filename):
@@ -128,6 +131,11 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False):
             response = e.output
         else:
             raise
+    if sys.version_info >= (3, 0):
+        # For Python 3, we should return a unicode string, so that the backends
+        # can safely assume that string operations such as regex matching are
+        # possible.
+        response = response.decode(CMD_RESPONSE_ENCODING)
     logger.debug("RESPONSE: ---\n%s\n---", response)
     return response
 
