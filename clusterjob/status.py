@@ -7,6 +7,8 @@ The status code are ordered such that
 
 An status code of 0 indicates succesful completion
 """
+from __future__ import print_function, division, absolute_import, \
+                       unicode_literals
 
 PENDING   = -2
 RUNNING   = -1

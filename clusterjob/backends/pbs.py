@@ -1,7 +1,10 @@
 """
 PBS/TORQUE backend
 """
-from ..status import PENDING, RUNNING, COMPLETED, CANCELLED, FAILED
+from __future__ import print_function, division, absolute_import, \
+                       unicode_literals
+
+from ..status import PENDING, RUNNING, COMPLETED
 
 opt_replacements = {
     'jobname': ('-N',           lambda s: str(s).strip() ),

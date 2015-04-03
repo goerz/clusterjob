@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function, division, absolute_import, \
+                       unicode_literals
 from clusterjob import Job
 from clusterjob.utils import read_file
 from clusterjob.status import str_status
@@ -17,16 +19,16 @@ job = Job(read_file('./jobscript.sh'), jobname='test', time='00:03:00',
           prologue=read_file('./prologue.sh'),
           epilogue=read_file('./epilogue.sh'))
 
-print "\n*** Submitting Job ***\n"
+print("\n*** Submitting Job ***\n")
 ar = job.submit()
 
-print "\n*** Cancelling Job ***\n"
+print("\n*** Cancelling Job ***\n")
 ar.cancel()
 
-print "\n*** Resubmitting Job ***\n"
+print("\n*** Resubmitting Job ***\n")
 ar = job.submit(retry=True)
 
-print "\n*** Waiting for  Job to finish ***\n"
-print str_status[ar.get()]
+print("\n*** Waiting for  Job to finish ***\n")
+print(str_status[ar.get()])
 
-print "\n*** DONE ***\n"
+print("\n*** DONE ***\n")

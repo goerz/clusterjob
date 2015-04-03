@@ -6,6 +6,9 @@ To see status messages, set
     import logging
     logging.basicConfig(level=logging.DEBUG)
 """
+from __future__ import print_function, division, absolute_import, \
+                       unicode_literals
+
 __version__ = "1.1.2"
 
 import os
@@ -160,7 +163,7 @@ class Job(object):
     >>> job = Job(script, backend='slurm', jobname='printenv', queue='test',
     ... time='00:05:00', nodes=1, threads=1, mem=100,
     ... stdout='printenv.out', stderr='printenv.err')
-    >>> print job
+    >>> print(job)
     #!/bin/bash
     #SBATCH --output=printenv.out
     #SBATCH --mem=100
@@ -198,7 +201,7 @@ class Job(object):
     ... '''
     >>> job = Job(script, jobname='myvar_test')
     >>> job.myvar = 'Hello'
-    >>> print job
+    >>> print(job)
     #!/bin/bash
     #SBATCH --nodes=1
     #SBATCH --cpus-per-task=1
