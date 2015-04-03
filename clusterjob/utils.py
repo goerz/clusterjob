@@ -192,7 +192,7 @@ def time_to_seconds(time_str):
     raise ValueError("'%s' has invalid pattern" % time_str)
 
 
-def mkdir(name, mode=0750):
+def mkdir(name, mode=0o750):
     """
     Implementation of 'mkdir -p': Creates folder with the given `name` and the
     given permissions (`mode`)

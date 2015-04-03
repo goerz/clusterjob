@@ -14,7 +14,10 @@ __version__ = "1.1.2"
 import os
 import subprocess as sp
 import tempfile
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from glob import glob
 from .utils import set_executable
 from textwrap import dedent
