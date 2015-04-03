@@ -22,6 +22,7 @@ from glob import glob
 from .utils import set_executable
 from textwrap import dedent
 import logging
+import importlib
 
 class Job(object):
     """
@@ -320,8 +321,8 @@ class Job(object):
             import clusterjob.backends
             for __, module_name, __ \
             in pkgutil.walk_packages(clusterjob.backends.__path__):
-                mod = __import__('clusterjob.backends.%s' % module_name,
-                                  globals(), locals(), ['backend', ], -1)
+                mod = importlib.import_module(
+                      'clusterjob.backends.%s' % module_name)
                 self.register_backend(mod.backend)
 
         for kw in ['backend', 'shell', 'remote', 'rootdir', 'workdir',
