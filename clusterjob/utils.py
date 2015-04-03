@@ -3,6 +3,7 @@ Collection of utility functions
 """
 import os
 import stat
+import logging
 import subprocess as sp
 try:
     from shlex import quote
@@ -35,8 +36,7 @@ def read_file(filename):
         return in_fh.read()
 
 
-def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
-    debug=False):
+def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False):
     r'''
     Run the given cmd in the given workdir, either locally or remotely, and
     return the combined stdout/stderr
@@ -71,9 +71,6 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
         has an exit code other than 0. This exception can be supressed by
         passing `ignore_exit_code=False`
 
-    debug: boolean, optional
-        If True, print the command that is executed and the response to stdout
-
     Example
     -------
 
@@ -93,6 +90,7 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
 
     >>> shutil.rmtree(tempfolder)
     '''
+    logger = logging.getLogger(__name__)
     workdir = os.path.join(rootdir, workdir)
     if type(cmd) in [list, tuple]:
         use_shell = False
@@ -102,12 +100,11 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
     try:
         if remote is None: # run locally
             workdir = os.path.expanduser(workdir)
-            if debug:
-                if use_shell:
-                    print "COMMAND: %s" % cmd
-                else:
-                    print "COMMAND: %s" \
-                          % " ".join([quote(part) for part in cmd])
+            if use_shell:
+                logger.debug("COMMAND: %s", cmd)
+            else:
+                logger.debug("COMMAND: %s",
+                             " ".join([quote(part) for part in cmd]))
             if workdir == '':
                 response = sp.check_output(cmd, stderr=sp.STDOUT,
                                            shell=use_shell)
@@ -121,16 +118,15 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
                 cmd = ['ssh', remote, cmd]
             else:
                 cmd = ['ssh', remote, 'cd %s && %s' % (workdir, cmd)]
-            if debug:
-                print "COMMAND: %s" % " ".join([quote(part) for part in cmd])
+            logger.debug("COMMAND: %s",
+                         " ".join([quote(part) for part in cmd]))
             response = sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as e:
         if ignore_exit_code:
             response = e.output
         else:
             raise
-    if debug:
-        print "RESPONSE: ---\n%s\n---" % response
+    logger.debug("RESPONSE: ---\n%s\n---", response)
     return response
 
 

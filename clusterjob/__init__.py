@@ -1,5 +1,10 @@
 """
 Abstract description of a Cluster Job
+
+To see status messages, set
+
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
 """
 __version__ = "1.1.2"
 
@@ -10,6 +15,7 @@ import cPickle as pickle
 from glob import glob
 from .utils import set_executable
 from textwrap import dedent
+import logging
 
 class Job(object):
     """
@@ -223,6 +229,7 @@ class Job(object):
         `clusterjob.backends.slurm.backend`. If the dictionary is found to have
         the wrong structure, an AssertionError will be raised.
         """
+        logger = logging.getLogger(__name__)
         from . backends import check_backend
         try:
             if check_backend(backend):
@@ -230,7 +237,7 @@ class Job(object):
         except AssertionError as e:
             import pprint
             pp = pprint.PrettyPrinter(indent=4)
-            print "Invalid backend:\n%s\n\n%s" % (pp.pformat(backend), e)
+            logger.error("Invalid backend:\n%s\n\n%s", pp.pformat(backend), e)
 
     @classmethod
     def clear_cache_folder(cls):
@@ -382,8 +389,7 @@ class Job(object):
         if filename is None:
             raise ValueError("filename not given")
         filepath = os.path.split(filename)[0]
-        run_cmd(['mkdir', '-p', filepath], remote, ignore_exit_code=False,
-                debug=self.debug_cmds)
+        run_cmd(['mkdir', '-p', filepath], remote, ignore_exit_code=False)
 
         # Write / Upload
         if remote is None:
@@ -417,7 +423,8 @@ class Job(object):
             try:
                 sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
             except sp.CalledProcessError as e:
-                print dedent(r'''
+                logger = logging.getLogger(__name__)
+                logger.error(r'''
                 Prologue script did not exit cleanly.
                 CWD: {cwd}
                 prologue: ---
@@ -426,14 +433,13 @@ class Job(object):
                 response: ---
                 {response}
                 ---
-                ''').format(cwd=os.getcwd(), prologue=self.prologue,
-                            response=e.output)
+                '''.format(cwd=os.getcwd(), prologue=self.prologue,
+                           response=e.output))
                 raise
             finally:
                 os.unlink(tempfilename)
 
-    def submit(self, block=False, cache_id=None, verbose=False, force=False,
-        retry=True):
+    def submit(self, block=False, cache_id=None, force=False, retry=True):
         """
         Submit the job.
 
@@ -451,9 +457,6 @@ class Job(object):
             in the cache_folder, nothing is submitted to the cluster, and the
             cached AsyncResult object is returned
 
-        verbose: boolean, optional
-            If True, print information about submission o the screen
-
         force: boolean, optional
             If True, discard any existing cached AsyncResult object, ensuring
             that the job is sent to the cluster.
@@ -463,16 +466,16 @@ class Job(object):
             finished with an error (CANCELLED/FAILED), resubmit the job,
             discard the cache and return a fresh AsyncResult object
         """
+        logger = logging.getLogger(__name__)
         from . status import FAILED, CANCELLED, PENDING, str_status
         from . utils import mkdir, run_cmd, time_to_seconds
         assert self.filename is not None, 'jobscript must have a filename'
-        if verbose:
-            if self.remote is None:
-                print "Submitting job %s locally" \
-                        % self.options['jobname']
-            else:
-                print "Submitting job %s on %s" \
-                        % (self.options['jobname'], self.remote)
+        if self.remote is None:
+            logger.info("Submitting job %s locally",
+                        self.options['jobname'])
+        else:
+            logger.info("Submitting job %s on %s",
+                        self.options['jobname'], self.remote)
 
         submitted = False
         if cache_id is None:
@@ -496,15 +499,13 @@ class Job(object):
                     except OSError:
                         pass
                 else:
-                    if verbose:
-                        print "Reloading AsyncResult from %s" % cache_file
+                    logger.debug("Reloading AsyncResult from %s", cache_file)
                     ar.load(cache_file)
                     submitted = True
                     if ar._status >= CANCELLED:
                         if retry:
-                            if verbose:
-                                print "Cached run %s, resubmitting" \
-                                % str_status[ar._status]
+                            logger.debug("Cached run %s, resubmitting",
+                                         str_status[ar._status])
                             os.unlink(cache_file)
                             ar = \
                             AsyncResult(backend=self.backends[self.backend])
@@ -518,18 +519,17 @@ class Job(object):
             job_id = None
             try:
                 cmd = cmd_submit(self.filename)
-                job_id = id_reader(run_cmd(cmd, self.remote, self.rootdir,
-                                           self.workdir, ignore_exit_code=True,
-                                           debug=self.debug_cmds))
+                job_id = id_reader(
+                            run_cmd(cmd, self.remote, self.rootdir,
+                                    self.workdir, ignore_exit_code=True))
                 if job_id is None:
-                    print "Failed to submit job"
+                    logger.error("Failed to submit job")
                     status = FAILED
                 else:
-                    if verbose:
-                        print "  Job ID: %s" % job_id
+                    logger.info("Job ID: %s", job_id)
                     status = PENDING
             except sp.CalledProcessError as e:
-                print "Failed to submit job: %s" % e
+                logger.error("Failed to submit job: %s", e)
                 status = FAILED
 
             ar.remote = self.remote
@@ -634,14 +634,12 @@ class AsyncResult(object):
             from . utils import run_cmd
             cmd_status, status_reader = self.backend['cmd_status_running']
             cmd = cmd_status(self.job_id)
-            response = run_cmd(cmd, self.remote, ignore_exit_code=True,
-                               debug=self.debug_cmds)
+            response = run_cmd(cmd, self.remote, ignore_exit_code=True)
             status = status_reader(response)
             if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
                 cmd = cmd_status(self.job_id)
-                response = run_cmd(cmd, self.remote, ignore_exit_code=True,
-                                   debug=self.debug_cmds)
+                response = run_cmd(cmd, self.remote, ignore_exit_code=True)
                 status = status_reader(response)
             prev_status = self._status
             self._status = status
@@ -719,8 +717,7 @@ class AsyncResult(object):
             return
         cmd_cancel = self.backend['cmd_cancel']
         cmd = cmd_cancel(self.job_id)
-        run_cmd(cmd, self.remote, ignore_exit_code=True,
-                debug=self.debug_cmds)
+        run_cmd(cmd, self.remote, ignore_exit_code=True)
         self._status = CANCELLED
         self.dump()
 
@@ -731,6 +728,7 @@ class AsyncResult(object):
         Raise sp.CalledProcessError if the script does not finish with
         exit code zero.
         """
+        logger = logging.getLogger(__name__)
         if self.epilogue is not None:
             with tempfile.NamedTemporaryFile('w', delete=False) as epilogue_fh:
                 epilogue_fh.write(self.epilogue)
@@ -739,7 +737,7 @@ class AsyncResult(object):
             try:
                 sp.check_output( [tempfilename, ], stderr=sp.STDOUT)
             except sp.CalledProcessError as e:
-                print dedent(r'''
+                logger.error(dedent(r'''
                 Epilogue script did not exit cleanly.
                 CWD: {cwd}
                 epilogue: ---
@@ -749,7 +747,7 @@ class AsyncResult(object):
                 {response}
                 ---
                 ''').format(cwd=os.getcwd(), epilogue=self.epilogue,
-                            response=e.output)
+                            response=e.output))
                 raise
             finally:
                 os.unlink(tempfilename)
