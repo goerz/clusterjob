@@ -9,7 +9,7 @@ To see status messages, set
 from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 import os
 import subprocess as sp
