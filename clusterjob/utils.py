@@ -28,6 +28,24 @@ def write_file(filename, data):
         out_fh.write(data)
 
 
+def split_seq(seq, n_chunks):
+    """Split the given sequence into n_chunks. Suitable for distributing an
+    array of jobs over a fixed number of workers.
+
+    >>> split_seq([1,2,3,4,5,6], 3)
+    [[1, 2], [3, 4], [5, 6]]
+    >>> split_seq([1,2,3,4,5,6], 2)
+    [[1, 2, 3], [4, 5, 6]]
+    >>> split_seq([1,2,3,4,5,6,7], 3)
+    [[1, 2], [3, 4, 5], [6, 7]]
+    """
+    newseq = []
+    splitsize = 1.0/n_chunks*len(seq)
+    for i in range(n_chunks):
+        newseq.append(seq[int(round(i*splitsize)):int(round((i+1)*splitsize))])
+    return newseq
+
+
 def read_file(filename):
     """
     Return the contents of the file with the given filename as a string
