@@ -234,6 +234,7 @@ class Job(object):
     cache_prefix = 'clusterjob'
     cache_counter = 0
     debug_cmds = False
+    _run_cmd = run_cmd # to allow easy mocking
 
     @classmethod
     def register_backend(cls, backend):
@@ -399,7 +400,8 @@ class Job(object):
         if filename is None:
             raise ValueError("filename not given")
         filepath = os.path.split(filename)[0]
-        run_cmd(['mkdir', '-p', filepath], remote, ignore_exit_code=False)
+        self._run_cmd(['mkdir', '-p', filepath], remote,
+                      ignore_exit_code=False)
 
         # Write / Upload
         if remote is None:
@@ -528,8 +530,8 @@ class Job(object):
             try:
                 cmd = cmd_submit(self.filename)
                 job_id = id_reader(
-                            run_cmd(cmd, self.remote, self.rootdir,
-                                    self.workdir, ignore_exit_code=True))
+                            self._run_cmd(cmd, self.remote, self.rootdir,
+                                          self.workdir, ignore_exit_code=True))
                 if job_id is None:
                     logger.error("Failed to submit job")
                     status = FAILED
@@ -639,12 +641,13 @@ class AsyncResult(object):
         else:
             cmd_status, status_reader = self.backend['cmd_status_running']
             cmd = cmd_status(self.job_id)
-            response = run_cmd(cmd, self.remote, ignore_exit_code=True)
+            response = self._run_cmd(cmd, self.remote, ignore_exit_code=True)
             status = status_reader(response)
             if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
                 cmd = cmd_status(self.job_id)
-                response = run_cmd(cmd, self.remote, ignore_exit_code=True)
+                response = self._run_cmd(cmd, self.remote,
+                                         ignore_exit_code=True)
                 status = status_reader(response)
             prev_status = self._status
             self._status = status
@@ -715,7 +718,7 @@ class AsyncResult(object):
             return
         cmd_cancel = self.backend['cmd_cancel']
         cmd = cmd_cancel(self.job_id)
-        run_cmd(cmd, self.remote, ignore_exit_code=True)
+        self._run_cmd(cmd, self.remote, ignore_exit_code=True)
         self._status = CANCELLED
         self.dump()
 
