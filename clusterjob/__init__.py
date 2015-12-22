@@ -19,10 +19,18 @@ try:
 except ImportError:
     import pickle
 from glob import glob
-from .utils import set_executable
 from textwrap import dedent
 import logging
 import importlib
+import pprint
+import pkgutil
+import time
+
+import clusterjob.backends
+from . status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
+    str_status)
+from .utils import set_executable, run_cmd, mkdir, time_to_seconds
+from .backends import check_backend
 
 class Job(object):
     """
@@ -237,12 +245,10 @@ class Job(object):
         the wrong structure, an AssertionError will be raised.
         """
         logger = logging.getLogger(__name__)
-        from . backends import check_backend
         try:
             if check_backend(backend):
                 cls.backends[backend['name']] = backend
         except AssertionError as e:
-            import pprint
             pp = pprint.PrettyPrinter(indent=4)
             logger.error("Invalid backend:\n%s\n\n%s", pp.pformat(backend), e)
 
@@ -317,8 +323,6 @@ class Job(object):
 
         if len(self.backends) == 0:
             # register all available backends
-            import pkgutil
-            import clusterjob.backends
             for __, module_name, __ \
             in pkgutil.walk_packages(clusterjob.backends.__path__):
                 mod = importlib.import_module(
@@ -384,7 +388,6 @@ class Job(object):
         specified by the rootdir and workdir attributes. The folder will be
         created if it does not exist already.
         """
-        from . utils import run_cmd
         remote = self.remote
         if filename is None:
             self._default_filename()
@@ -474,8 +477,6 @@ class Job(object):
             discard the cache and return a fresh AsyncResult object
         """
         logger = logging.getLogger(__name__)
-        from . status import FAILED, CANCELLED, PENDING, str_status
-        from . utils import mkdir, run_cmd, time_to_seconds
         assert self.filename is not None, 'jobscript must have a filename'
         if self.remote is None:
             logger.info("Submitting job %s locally",
@@ -618,7 +619,6 @@ class AsyncResult(object):
 
     def __init__(self, backend):
         """Create a new AsyncResult instance"""
-        from . status import CANCELLED
         self.remote = None
         self.options = {}
         self.cache_file = None
@@ -634,11 +634,9 @@ class AsyncResult(object):
         `clusterjob.status` module.
         finished, communicate with the cluster to determine the job's status.
         """
-        from . status import COMPLETED, STATUS_CODES
         if self._status >= COMPLETED:
             return self._status
         else:
-            from . utils import run_cmd
             cmd_status, status_reader = self.backend['cmd_status_running']
             cmd = cmd_status(self.job_id)
             response = run_cmd(cmd, self.remote, ignore_exit_code=True)
@@ -660,7 +658,6 @@ class AsyncResult(object):
 
     def get(self, timeout=None):
         """Return status"""
-        from . status import COMPLETED
         status = self.status
         if status >= COMPLETED:
             return status
@@ -690,8 +687,6 @@ class AsyncResult(object):
     def wait(self, timeout=None):
         """Wait until the result is available or until roughly timeout seconds
         pass."""
-        from . status import COMPLETED
-        import time
         spent_time = 0
         sleep_seconds = int(self.sleep_interval)
         while self.status < COMPLETED:
@@ -703,14 +698,12 @@ class AsyncResult(object):
 
     def ready(self):
         """Return whether the job has completed."""
-        from . status import COMPLETED
         return (self.status >= COMPLETED)
 
     def successful(self):
         """Return True if the job finished with a COMPLETED status, False if it
         finished with a CANCELLED or FAILED status. Raise an AssertionError if
         the job has not completed"""
-        from . status import COMPLETED
         status = self.status
         assert status >= COMPLETED, "status is %s" % status
         return (self.status == COMPLETED)
@@ -718,8 +711,6 @@ class AsyncResult(object):
     def cancel(self):
         """Instruct the cluster to cancel the running job. Has no effect if
         job is not running"""
-        from . status import CANCELLED, COMPLETED
-        from . utils import run_cmd
         if self.status > COMPLETED:
             return
         cmd_cancel = self.backend['cmd_cancel']

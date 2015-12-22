@@ -8,6 +8,7 @@ import stat
 import sys
 import logging
 import subprocess as sp
+import re
 try:
     from shlex import quote
 except ImportError:
@@ -190,7 +191,6 @@ def time_to_seconds(time_str):
       ...
     ValueError: '1 1:10:30' has invalid pattern
     """
-    import re
     patterns = [
         re.compile(r'^(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)$'),
         re.compile(r'^(?P<days>\d+)-(?P<hours>\d+)$'),
