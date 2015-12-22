@@ -60,7 +60,8 @@ def read_file(filename):
         return in_fh.read()
 
 
-def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False):
+def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
+        ssh='ssh'):
     r'''
     Run the given cmd in the given workdir, either locally or remotely, and
     return the combined stdout/stderr
@@ -94,6 +95,10 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False):
         By default, subprocess.CalledProcessError will be raised if the call
         has an exit code other than 0. This exception can be supressed by
         passing `ignore_exit_code=False`
+
+    ssh: str, optional
+        The executable to be used for ssh. If not a full path, the executable
+        must be in $PATH
 
     Example
     -------
@@ -139,9 +144,9 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False):
             if not use_shell:
                 cmd = " ".join(cmd)
             if workdir == '':
-                cmd = ['ssh', remote, cmd]
+                cmd = [ssh, remote, cmd]
             else:
-                cmd = ['ssh', remote, 'cd %s && %s' % (workdir, cmd)]
+                cmd = [ssh, remote, 'cd %s && %s' % (workdir, cmd)]
             logger.debug("COMMAND: %s",
                          " ".join([quote(part) for part in cmd]))
             response = sp.check_output(cmd, stderr=sp.STDOUT)
