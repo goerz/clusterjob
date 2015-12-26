@@ -6,7 +6,7 @@ from __future__ import print_function, division, absolute_import, \
 
 from ..status import RUNNING, COMPLETED
 
-opt_replacements = {
+resource_replacements = {
     'jobname': ('-N',           lambda s: str(s).strip() ),
     'nodes'  : (None,           lambda s: None),
     'threads': (None,           lambda s: None),
@@ -36,13 +36,13 @@ opt_replacements = {
 # as e.g. '-S /bin/bash'. If this definition is missing, the run can crash with
 # some very unclear error messages
 
-def translate_options(options_dict):
-    """Translate dictionary of options into array of options for SGE"""
-    options_dict = options_dict.copy()
+def translate_resources(resources_dict):
+    """Translate dictionary of resources into array of options for SGE"""
+    resources_dict = resources_dict.copy()
     opt_array = []
-    for (key, val) in options_dict.items():
-        if key in opt_replacements:
-            sge_key, converter = opt_replacements[key]
+    for (key, val) in resources_dict.items():
+        if key in resource_replacements:
+            sge_key, converter = resource_replacements[key]
             val = converter(val)
         else:
             sge_key = key
@@ -99,8 +99,8 @@ backend = {
     'cmd_status_finished': (lambda job_id: ['qstat', '-j %s' % job_id],
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['qdel', str(job_id)],
-    'translate_options': translate_options,
-    'default_opts': {
+    'translate_resources': translate_resources,
+    'default_resources': {
         'nodes'  : 1,
         'threads': 1,
         '-V': True,    # export all environment variables

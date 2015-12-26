@@ -6,32 +6,33 @@ from __future__ import print_function, division, absolute_import, \
 
 from ..status import PENDING, RUNNING, COMPLETED
 
-opt_replacements = {
+resource_replacements = {
     'jobname': ('-N',           lambda s: str(s).strip() ),
     'queue'  : ('-q',           lambda s: str(s).strip() ),
     'time'   : ('-l walltime=', lambda s: str(s).strip() ),
     'mem'    : ('-l mem=',      lambda s: "%sm" % str(s).strip() ),
     'stdout' : ('-o',           lambda s: str(s).strip() ),
     'stderr' : ('-e',           lambda s: str(s).strip() ),
-    # nodes and threads are handled separately, in translate_options
+    # nodes and threads are handled separately, in translate_resources
 }
 
 
-def translate_options(options_dict):
-    """Translate dictionary of options into array of options for PBS"""
-    options_dict = options_dict.copy()
+def translate_resources(resources_dict):
+    """Translate dictionary of resources into array of options for PBS"""
+    resources_dict = resources_dict.copy()
     opt_array = []
-    if 'nodes' in options_dict:
-        if 'threads' in options_dict:
+    if 'nodes' in resources_dict:
+        if 'threads' in resources_dict:
             opt_array.append('-l nodes=%s:ppn=%s'
-                            % (options_dict['nodes'], options_dict['threads']))
-            del options_dict['threads']
+                            % (resources_dict['nodes'],
+                               resources_dict['threads']))
+            del resources_dict['threads']
         else:
-            opt_array.append('-l nodes=%s' % (options_dict['nodes'], ))
-        del options_dict['nodes']
-    for (key, val) in options_dict.items():
-        if key in opt_replacements:
-            pbs_key, converter = opt_replacements[key]
+            opt_array.append('-l nodes=%s' % (resources_dict['nodes'], ))
+        del resources_dict['nodes']
+    for (key, val) in resources_dict.items():
+        if key in resource_replacements:
+            pbs_key, converter = resource_replacements[key]
             val = converter(val)
         else:
             pbs_key = key
@@ -102,8 +103,8 @@ backend = {
     'cmd_status_finished': (lambda job_id: ['qstat', str(job_id)],
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['qdel', str(job_id) ],
-    'translate_options': translate_options,
-    'default_opts': {
+    'translate_resources': translate_resources,
+    'default_resources': {
         'nodes'  : 1,
         'threads': 1,
         '-V': True,    # export all environment variables

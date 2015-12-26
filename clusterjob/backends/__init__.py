@@ -10,7 +10,7 @@ have the following structure of keys and values:
         Name of the backend.
 
     'prefix': str
-        prefix to be added before each submission options, in the header of the
+        prefix to be added before each submission option, in the header of the
         job script. E.g. '#SBATCH' for slurm and '#PBS' for PBS/Torque.
 
     'extension': str
@@ -19,7 +19,7 @@ have the following structure of keys and values:
     'cmd_submit': tuple of (callable, callable)
         The first element of the tuple is a callable that receives the name of
         the job script and must return the command to be used for submission,
-        pererrably as a command list, or alternativey as a shell command
+        peferrably as a command list, or alternativey as a shell command
         string.
         The second element of the tuple is a callable that receives
         the shell output from the submission command and returns the job ID
@@ -29,10 +29,10 @@ have the following structure of keys and values:
         The first element of the tuple is a callable that receives the job ID
         of a running job, and must return the command to be used to check the
         status of the script (as list or string, see 'cmd_submit')
-        The second element of the tuple is a
-        callable that receives the shell output from that command and returns
-        one of the status codes defined in the `clusterjob.status` module, or
-        None if no status can be determined from the output of the command.
+        The second element of the tuple is a callable that receives the shell
+        output from that command and returns one of the status codes defined in
+        the `clusterjob.status` module, or None if no status can be determined
+        from the output of the command.
 
     'cmd_status_finished': tuple of (list, callable)
         A fallback if `cmd_status_running` is not able to determine a status,
@@ -44,16 +44,16 @@ have the following structure of keys and values:
         Callable that receives the job ID of a running job, and must return the
         command that can be used to cancel the job (as a list or string).
 
-    'translate_options': callable
-        The callable receives a dictionary of options (from
-        clusterjob.Job.options), and must return an array of command line
-        options for the backend's submission script. These, together with the
-        backend's prefix will be written to the header of the job submission
-        script.
+    'translate_resources': callable
+        The callable receives a dictionary of resource specifications (from
+        clusterjob.JobScript.resources), and must return an array of command
+        line options for the backend's submission script. These, together with
+        the backend's prefix will be written to the header of the job
+        submission script.
 
-    'default_opts': dict
-        Default entries for `clusterjob.Job.options` when a Job instance is
-        created with the given backend
+    'default_resources': dict
+        Default entries for `clusterjob.JobScript.resources` when a JobScript
+        instance is created with the given backend
 
     'job_vars': dict
         Mapping of replacements that will be applied to the body of the job
@@ -71,6 +71,12 @@ from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 
 from . import slurm
+
+# every backend must know how to handle the following keys in the resources
+# dict
+COMMON_KEYS = ['name', 'queue', 'time', 'nodes', 'threads', 'mem', 'stdout',
+    'stderr']
+
 
 def check_backend(backend, raise_exception=True):
     """
@@ -100,8 +106,10 @@ def check_backend(backend, raise_exception=True):
             'stdout': 'stdout.log',
             'stderr': 'stderr.log',
         }
+        for key in COMMON_KEYS:
+            assert key in test_options
         try:
-            opt_array = backend['translate_options'](test_options)
+            opt_array = backend['translate_resources'](test_options)
             for option in opt_array:
                 assert str(option) == option
         except Exception as e:

@@ -20,6 +20,7 @@ except ImportError:
     import pickle
 from glob import glob
 from textwrap import dedent
+from collections import OrderedDict
 import logging
 import importlib
 import pprint
@@ -27,19 +28,15 @@ import pkgutil
 import time
 
 import clusterjob.backends
-from . status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
+from .status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
     str_status)
 from .utils import set_executable, run_cmd, mkdir, time_to_seconds
 from .backends import check_backend
 
-class Job(object):
+class JobScript(object):
     """
     Class Attributes
     ----------------
-
-    default_opts: dict
-        Default values of the `options` attribute for a newly created Job
-        instance.
 
     backends: dict
         Available backends. Maps backend name to a dictionary of backend
@@ -47,98 +44,98 @@ class Job(object):
         details. User-defined backends may be added with the `register_backend`
         class method
 
-    default_backend: str
-        The default backend name to be used.
-
-    default_shell: str
-        The shell to be used (shebang) for the job script. Also the shebang for
-        the prologue and epilogue scripts, if no shebang is present in those
-        scripts
-
-    default_remote: str
-        The remote to be used when submitting the job script
-
-    default_rootdir: str
-        The default root for all working directories.
-
-    default_sleep_interval: int or None
-        The default value of the `sleep_interval` attribute.
-
-    cache_folder: str
+    cache_folder: str or None
         Local folder in which to cache the AsyncResult instances resulting from
-        job submission
+        job submission. If None (default), caching is disabled.
 
     cache_prefix: str
-        prefix for cache filenames
-
-    cache_counter: int
-        Internal counter to be used when no cache_id is specified during
-        submission
+        Prefix for cache filenames. If caching is enabled, jobs will be stored
+        inside `cachefolder` in a file `cache_prefix`.`cache_id`.cache, where
+        `cache_id` is defined in the `submit` method.
 
     debug_cmds: boolean
         If set to True, write debug information about all external commands
         (`utils.run_cmd` calls) to stdout.
 
+    resources: OrderedDict
+        Dictionary of *default* resource requirements. Modifying the
+        `resources` class attribute affects the default resources for all
+        future instantiations.
+
     Attributes
     ----------
 
-    jobscript: str
-        Multiline job script. Should not contain a shebang or backend-specific
-        submission headers. It will be rendered for the given backend by
-        * adding a shebang (based on the `shell` attribute)
-        * adding job submission headers (based on the options attribute)
-        * applying the mappings defined in the `job_vars` entry of the backend
-        * formatting the script with the attributes of the job attributes (e.g.
-          {rootdir} will be replaced by the value of the `rootdir` attribute.
+    The following are class attributes, with the expectation that they may be
+    shadowed by instance attributes of the same name. This allows to define
+    defaults for all jobs by setting the class attribute, and overriding
+    them for specific jobs by setting the instance attribute.
+    For example,
+
+    >>> jobscript = JobScript(body='echo "Hello"', jobname='test')
+    >>> jobscript.shell = '/bin/sh'
+
+    sets the shell for only this specific jobscript, whereas
+
+    >>> JobScript.shell = '/bin/sh'
+
+    sets the class attribute, and thus the default shell for *all* JobScript
+    instances, both future and existing instantiation:
+
+    >>> job1 = JobScript(body='echo "Hello"', jobname='test1')
+    >>> job2 = JobScript(body='echo "Hello"', jobname='test2')
+    >>> assert job1.shell == job2.shell == '/bin/sh'   # class attribute
+    >>> JobScript.shell = '/bin/bash'
+    >>> assert job1.shell == job2.shell == '/bin/bash' # class attribute
+    >>> job1.shell = '/bin/sh'
+    >>> assert job1.shell == '/bin/sh'                 # instance attribute
+    >>> assert job2.shell == '/bin/bash'               # class attribute
 
     backend: str
-        name of backend, must be a key in the backends class dictionary
+        Name of backend, must be a key in the backends class dictionary.
+        Defaults to 'slurm'.
 
     shell: str
-        shell that is used to execute runscript
+        Shell that is used to execute runscript.  Defaults to '/bin/bash'.
 
     remote: str or None
-        remote server on which to execute submit commands
+        Remote server on which to execute submit commands. If None (default),
+        submit locally.
 
     rootdir: str
-        root directory for workdir
+        Root directory for workdir, locally or remote. Defaults to '', i.e.,
+        the current working directory. The rootdir is guaranteed not to have a
+        trailing slash.
 
     workdir: str
-        work directory (local or remote) in which the job script file will be
+        Work directory (local or remote) in which the job script file will be
         placed, and from which the submission command will be called. Relative
-        to `rootdir`.
+        to `rootdir`. Defaults to '' (current working directory). The workdir
+        is guaranteed not to have a trailing slash.
 
-    filename: str
+    filename: str or None
         Name of file to which the job script will be written (inside
-        rootdir/workdir).  If not set explicitly set, the filename will be set
-        from the job name (`options['jobname']` attribute) together with a
-        backend-specific file extension
+        rootdir/workdir).  If None (default), the filename will be
+        set from the job name (`resources['jobname']` attribute)
+        together with a backend-specific file extension
 
     prologue: str
         multiline shell script that will be executed *locally* in the current
-        working directory before submitting the job. If the script does not
-        contain a shebang, the shell specified in the `shell` attribute will be
-        used. The body of the script will be formatted with the Job attributes
-        (at submission time); e.g., '{remote}' will be replaced by the value of
-        the corresponding attribute. In addition, '{fulldir}' will be replaced
-        by
-
-            os.path.join(rootdir, workdir)
-
-        The main purpose of the prologue script is to move data to a remote
+        working directory before submitting the job. Before running, the script
+        will be rendered using the `render_script` method.
+        A common purpose of the prologue script is to move data to a remote
         cluster, e.g. via the commands
 
-            ssh {remote} 'mkdir -p {fulldir}'
-            rsync -av {workdir}/ {remote}:{fulldir}
+            ssh {remote} 'mkdir -p {rootdir}/{workdir}'
+            rsync -av {workdir}/ {remote}:{rootdir}/{workdir}
 
     epilogue: str
         multiline shell script that will be executed *locally* in the current
         working directory the first time that the job is known to have
-        finished. It will be formatted in the same way as the prologue script
-        (at submission time). It's execution will be handled by the AsyncResult
-        object resulting from the job submission. The main purpose of the
-        epilogue script is to move data from a remote cluster upon completion
-        of the job.
+        finished. It will be rendered using the `render_script` method at the
+        time that the job is submitted.  It's execution will be handled by the
+        AsyncResult object resulting from the job submission. The main purpose
+        of the epilogue script is to move data from a remote cluster upon
+        completion of the job.
 
     sleep_interval: int or None
         Value for the `sleep_interval` attribute of the AsyncResult instance
@@ -146,15 +143,26 @@ class Job(object):
         will be automatically determined between 10 and 1800 seconds, depending
         on the projected runtime of the job.
 
-    options: dict
-        Dictionary of submission options describing resource requirements. Will
-        be translated according to the backend and passed to the submission
-        command
+    Instance Attributes
+    -------------------
+
+    The following attributes are local to any JobScript instance.
+
+    body: str
+        Multiline string of shell commands. Should not contain backend-specific
+        resource headers. Before submission, it will be rendered using the
+        `render_script` method.
+
+    resources: dict
+        Dictionary of submission options describing resource requirements. Set
+        on instantiation, based on the default values in the `resources` class
+        attribute and the keyword arguments passed to the instantiator.
+
 
     Examples
     --------
 
-    >>> script = r'''
+    >>> body = r'''
     ... echo "####################################################"
     ... echo "Job id: $XXX_JOB_ID"
     ... echo "Job name: $XXX_WORKDIR"
@@ -172,19 +180,19 @@ class Job(object):
     ... echo "Job Finished: " `date`
     ... exit 0
     ... '''
-    >>> job = Job(script, backend='slurm', jobname='printenv', queue='test',
-    ... time='00:05:00', nodes=1, threads=1, mem=100,
+    >>> jobscript = JobScript(body, backend='slurm', jobname='printenv',
+    ... queue='test', time='00:05:00', nodes=1, threads=1, mem=100,
     ... stdout='printenv.out', stderr='printenv.err')
-    >>> print(job)
+    >>> print(jobscript)
     #!/bin/bash
-    #SBATCH --output=printenv.out
-    #SBATCH --mem=100
     #SBATCH --job-name=printenv
-    #SBATCH --partition=test
-    #SBATCH --cpus-per-task=1
-    #SBATCH --error=printenv.err
-    #SBATCH --time=00:05:00
+    #SBATCH --mem=100
     #SBATCH --nodes=1
+    #SBATCH --partition=test
+    #SBATCH --error=printenv.err
+    #SBATCH --output=printenv.out
+    #SBATCH --cpus-per-task=1
+    #SBATCH --time=00:05:00
     <BLANKLINE>
     echo "####################################################"
     echo "Job id: $SLURM_JOB_ID"
@@ -208,38 +216,54 @@ class Job(object):
     with the formatting step in rendering the job script allow for a a powerful
     (but hacky) way to use arbitrary template variables in the job script:
 
-    >>> script = r'''
+    >>> body = r'''
     ... echo {myvar}
     ... '''
-    >>> job = Job(script, jobname='myvar_test')
-    >>> job.myvar = 'Hello'
-    >>> print(job)
+    >>> jobscript = JobScript(body, jobname='myvar_test')
+    >>> jobscript.myvar = 'Hello'
+    >>> print(jobscript)
     #!/bin/bash
-    #SBATCH --nodes=1
-    #SBATCH --cpus-per-task=1
     #SBATCH --job-name=myvar_test
     <BLANKLINE>
     echo Hello
     <BLANKLINE>
     """
 
-    default_opts = {}
+    # the following class attribute are fall-backs for intended instance
+    # attributes. That is, if there is an instance attribute of the same name
+    # shadowing the class attribute, the instance attribute is used in any
+    # context
+    _attributes = ['backend', 'shell', 'remote', 'rootdir', 'workdir',
+            'filename', 'prologue', 'epilogue', 'sleep_interval']
+    backend = 'slurm'
+    shell = '/bin/bash'
+    remote = None
+    rootdir = ''
+    workdir = ''
+    filename = None
+    prologue = ''
+    epilogue = ''
+    sleep_interval = None
+
+    # the following are genuine class attributes:
+    _protected_attributes = ['backends', 'debug_cmds', 'cache_folder',
+            'cache_prefix', '_cache_counter', '_run_cmd']
+    # Trying to create an instance  attribute of the same name will raise an
+    # AttributeError.
     backends = {}
-    default_backend = 'slurm'
-    default_shell = None
-    default_remote = None
-    default_rootdir = ''
-    default_sleep_interval = None
+    debug_cmds = False
     cache_folder = None
     cache_prefix = 'clusterjob'
-    cache_counter = 0
-    debug_cmds = False
+    _cache_counter = 0
     _run_cmd = run_cmd # to allow easy mocking
+
+    # the `resources` class attribute is copied into an instance attribute on
+    # every instantiation
+    resources = OrderedDict()
 
     @classmethod
     def register_backend(cls, backend):
-        """
-        Register a new backend
+        """Register a new backend
 
         `backend` must be a dictionary that follows the same structure as
         `clusterjob.backends.slurm.backend`. If the dictionary is found to have
@@ -260,12 +284,12 @@ class Job(object):
             for file in glob(os.path.join(cls.cache_folder, '*')):
                 os.unlink(file)
 
-    def __init__(self, jobscript, jobname, **kwargs):
+    def __init__(self, body, jobname, **kwargs):
         """
         Arguments
         ---------
 
-        jobscript: str
+        body: str
             Body (template) for the jobscript as multiline string
 
         jobname: str
@@ -275,19 +299,17 @@ class Job(object):
         Keyword Arguments
         -----------------
 
-        The backend, shell, remote, rootdir, workdir, filename, prologue,
-        epilogue, and sleep_interval arguments specify the value of the
-        corresponding attributes.
+        For arguments listed in the "Attributes" section of the JobScript class
+        docstring, create an instance attribute with the corresponding vlaue.
 
-        All other keyword arguments are stored in the `options` dict attribute,
-        to be used as options for the job submission command (e.g. sbatch for
-        slurm or qsub for PBS). At a minimum, the following arguments are
-        supported:
+        For all other keyword arguments, store a value in the `resources`
+        instance attribute. The accepted keywords depend on the backend. At a
+        minimum, the following keywords are supported (common to all backends):
 
         queue: str
             Name of queue/partition to which to submit the job
 
-        time: time
+        time: str
             Maximum runtime
 
         nodes: int
@@ -297,7 +319,7 @@ class Job(object):
             Required number of threads (cores)
 
         mem: int
-            Required memory
+            Required memory (MB)
 
         stdout: str
             name of file to which to write the jobs stdout
@@ -305,7 +327,7 @@ class Job(object):
         stderr: str
             name of file to which to write the jobs stderr
 
-        Custom backends may define further options, or even support arbitrary
+        Some backends may define further options, or even support arbitrary
         additional options. For example, in the default SLURM backend,
         unknown options are passed directly as arguments to `sbatch`, where
         single-letter argument names are prepended with '-', multi-letter
@@ -318,9 +340,10 @@ class Job(object):
 
         All backends are encouraged to implement a similar behavior.
         """
-        self.options = {'jobname': jobname}
+        self.resources = self.__class__.resources.copy()
+        self.resources['jobname'] = jobname
 
-        self.jobscript = jobscript
+        self.body = body
 
         if len(self.backends) == 0:
             # register all available backends
@@ -329,61 +352,101 @@ class Job(object):
                 mod = importlib.import_module(
                       'clusterjob.backends.%s' % module_name)
                 self.register_backend(mod.backend)
+            # perform some consistency checks
+            for attr in self.__class__._attributes:
+                assert attr in self.__class__.__dict__
+            for attr in self.__class__._protected_attributes:
+                assert attr in self.__class__.__dict__
 
-        for kw in ['backend', 'shell', 'remote', 'rootdir', 'workdir',
-        'filename', 'prologue', 'epilogue', 'sleep_interval']:
-            self.__dict__[kw] = None
-            if kw in kwargs:
-                self.__dict__[kw] = kwargs[kw]
-                del kwargs[kw]
+        # There is no way to preserve the order of the kwargs, so we sort them
+        # to at least guarantee a stable behavior
+        for kw in sorted(kwargs):
+            if kw in self.__class__._attributes:
+                # We define an instance attribute that shadows the underlying
+                # class attribute
+                self.__setattr__(kw, kwargs[kw])
             else:
-                default_key = 'default_%s' % kw
-                if default_key in self.__class__.__dict__:
-                    self.__dict__[kw] = self.__class__.__dict__[default_key]
-        if self.shell is None:
-            self.shell = '/bin/bash'
-        if self.rootdir is None:
-            self.rootdir = ''
-        if self.workdir is None:
-            self.workdir = ''
-        if self.filename is None:
-            self._default_filename()
+                self.resources[kw] = kwargs[kw]
 
-        self.options.update(self.backends[self.backend]['default_opts'])
-        self.options.update(self.default_opts)
-        self.options.update(kwargs)
+    def __setattr__(self, name, value):
+        """Set attributes while preventing shadowing the "genuine" class
+        attributes by raising an AttributeError. Perform some checks on the
+        value, raising a ValueError if necessary."""
+        if name in self.__class__._protected_attributes:
+            raise AttributeError("'%s' can only be set as a class attribute"
+                                 % name)
+        else:
+            if name == 'backend':
+                if not value in self.backends:
+                    raise ValueError("Unknown backend %s" % value)
+            elif value in ['rootdir', 'workdir']:
+                value = value.strip()
+                if value.endswith('/'):
+                    value = value[:-1] # strip trailing slash
+            self.__dict__[name] = value
 
     def _default_filename(self):
         """If self.filename is None, attempt to set it from the jobname"""
         if self.filename is None:
-            if 'jobname' in self.options:
+            if 'jobname' in self.resources:
                 self.filename = "%s.%s" \
-                                 % (self.options['jobname'],
+                                 % (self.resources['jobname'],
                                     self.backends[self.backend]['extension'])
 
-    def __str__(self):
-        """Return the string representation of the job, i.e. the fully rendered
-        jobscript"""
-        opt_translator = self.backends[self.backend]['translate_options']
-        opt_array = opt_translator(self.options)
-        prefix = self.backends[self.backend]['prefix']
-        jobscript = self.jobscript
+    def render_script(self, scriptbody, jobscript=False):
+        """Render the body of a script. This brings both the main JobScript
+        body, as well as the prologue and epilogue scripts, into the final form
+        in which they will be executed.
+
+        Rendering proceeds in the following steps:
+        * Add a shebang (e.g. "#!/bin/bash", based on the `shell` attribute).
+          Any existing shebang will be stripped out
+        * If rendering the body of a JobScript (`jobscript=True`), add
+          backedn-specific resource headers (based on the `resources`
+          attribute)
+        * Apply the mappings defined in the `job_vars` entry of the backend,
+          replacing environement variables with their proper names. Note that
+          the prologue and epilogue will not be run by a scheduler, and thus
+          will not have access to the same environment variables as a job
+          script.
+        * Format each line with known attributes (see
+          https://docs.python.org/3.5/library/string.html#formatspec).
+          In order of precedence (highest to lowest), the following keys will
+          be replaced:
+          - keys in the `resources` attribute
+          - instance attributes
+          - class attributes
+        """
+        # add a shebang
+        rendered_lines = []
+        rendered_lines.append("#!%s" % self.shell)
+        # add the resource headers
+        if jobscript:
+            opt_translator = self.backends[self.backend]['translate_resources']
+            opt_array = opt_translator(self.resources)
+            prefix = self.backends[self.backend]['prefix']
+            for option in opt_array:
+                rendered_lines.append("%s %s" % (prefix, option))
+        # apply environment variable mappings
         var_replacements = self.backends[self.backend]['job_vars']
         for var in var_replacements:
-            jobscript = jobscript.replace(var, var_replacements[var])
-        jobscript_lines = []
-        jobscript_lines.append("#!%s" % self.shell)
-        for option in opt_array:
-            jobscript_lines.append("%s %s" % (prefix, option))
-        for line in jobscript.split("\n"):
+            scriptbody = scriptbody.replace(var, var_replacements[var])
+        # apply attribute mappings
+        mappings = dict(self.__class__.__dict__)
+        mappings.update(self.__dict__)
+        mappings.update(self.resources)
+        for line in scriptbody.split("\n"):
             if not line.startswith("#!"):
-                jobscript_lines.append(line)
-        jobscript = "\n".join(jobscript_lines)
-        return jobscript.format(**self.__dict__)
+                rendered_lines.append(line.format(**mappings))
+        return "\n".join(rendered_lines)
+
+    def __str__(self):
+        """String representation of the job, i.e., the fully rendered
+        jobscript"""
+        return self.render_script(self.body, jobscript=True)
 
     def write(self, filename=None):
-        """
-        Write out the fully rendered jobscript to file. If filename is not
+        """Write out the fully rendered jobscript to file. If filename is not
         None, write to the given *local* file. Otherwise, write to the local or
         remote file specified in the filename attribute, in the folder
         specified by the rootdir and workdir attributes. The folder will be
@@ -423,11 +486,7 @@ class Job(object):
     def _run_prologue(self):
         """Render and run the prologue script"""
         if self.prologue is not None:
-            prologue = self.prologue.format(
-                           fulldir=os.path.join(self.rootdir, self.workdir),
-                           **self.__dict__)
-            if not prologue.startswith("#!"):
-                prologue = "#!" + self.shell + "\n" + prologue
+            prologue = self.render_script(self.prologue)
             with tempfile.NamedTemporaryFile('w', delete=False) as prologue_fh:
                 prologue_fh.write(prologue)
                 tempfilename = prologue_fh.name
@@ -452,8 +511,7 @@ class Job(object):
                 os.unlink(tempfilename)
 
     def submit(self, block=False, cache_id=None, force=False, retry=True):
-        """
-        Submit the job.
+        """Run the prologue script, then submit the job.
 
         Parameters
         ----------
@@ -466,12 +524,13 @@ class Job(object):
             An ID uniquely defining the submission, used as identifier for the
             cached AsyncResult object. If not given, the cache_id is determined
             internally. If an AsyncResult with a matching cache_id is present
-            in the cache_folder, nothing is submitted to the cluster, and the
-            cached AsyncResult object is returned
+            in the cache_folder, nothing is submitted to the scheduler, and the
+            cached AsyncResult object is returned. The prologue script is not
+            re-run when recovering a cached result.
 
         force: boolean, optional
             If True, discard any existing cached AsyncResult object, ensuring
-            that the job is sent to the cluster.
+            that the job is sent to the schedular.
 
         retry: boolean, optional
             If True, and the existing cached AsyncResult indicates that the job
@@ -482,15 +541,15 @@ class Job(object):
         assert self.filename is not None, 'jobscript must have a filename'
         if self.remote is None:
             logger.info("Submitting job %s locally",
-                        self.options['jobname'])
+                        self.resources['jobname'])
         else:
             logger.info("Submitting job %s on %s",
-                        self.options['jobname'], self.remote)
+                        self.resources['jobname'], self.remote)
 
         submitted = False
         if cache_id is None:
-            Job.cache_counter += 1
-            cache_id = str(Job.cache_counter)
+            Job._cache_counter += 1
+            cache_id = str(Job._cache_counter)
         else:
             cache_id = str(cache_id)
         cache_file = None
@@ -543,7 +602,7 @@ class Job(object):
                 status = FAILED
 
             ar.remote = self.remote
-            ar.options = self.options.copy()
+            ar.resources = self.resources.copy()
             ar.cache_file = cache_file
             ar.backend = self.backends[self.backend]
             if self.sleep_interval is not None:
@@ -551,7 +610,7 @@ class Job(object):
             else:
                 try:
                     ar.sleep_interval \
-                    = int(time_to_seconds(self.options['time']) / 10)
+                    = int(time_to_seconds(self.resources['time']) / 10)
                     if ar.sleep_interval < 10:
                         ar.sleep_interval = 10
                     if ar.sleep_interval > 1800:
@@ -580,7 +639,7 @@ class Job(object):
 
 class AsyncResult(object):
     """
-    Result of submitting a cluster job
+    Result of submitting a jobscript
 
     Attributes
     ----------
@@ -590,9 +649,9 @@ class AsyncResult(object):
         set up to reach the remote. A value of None indicates that the job is
         running locally
 
-    options: dict
-        copy of the `options` attribute of the Job() instance that created the
-        AsyncResult object
+    resources: dict
+        copy of the `resources` attribute of the JobScript() instance that
+        created the AsyncResult object
 
     cache_file: str or None
         The full path and name of the file to be used to cache the AsyncResult
@@ -622,7 +681,7 @@ class AsyncResult(object):
     def __init__(self, backend):
         """Create a new AsyncResult instance"""
         self.remote = None
-        self.options = {}
+        self.resources = {}
         self.cache_file = None
         self.backend = backend
         self.sleep_interval = 10
@@ -675,7 +734,7 @@ class AsyncResult(object):
         if cache_file is not None:
             self.cache_file = cache_file
             with open(cache_file, 'wb') as pickle_fh:
-                pickle.dump((self.remote, self.options, self.sleep_interval,
+                pickle.dump((self.remote, self.resources, self.sleep_interval,
                              self.job_id, self._status, self.epilogue),
                             pickle_fh)
 
@@ -683,7 +742,7 @@ class AsyncResult(object):
         """Read dump from file"""
         self.cache_file = cache_file
         with open(cache_file, 'rb') as pickle_fh:
-            self.remote, self.options, self.sleep_interval, self.job_id, \
+            self.remote, self.resources, self.sleep_interval, self.job_id, \
             self._status, self.epilogue = pickle.load(pickle_fh)
 
 

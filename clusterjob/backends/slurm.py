@@ -6,7 +6,7 @@ from __future__ import print_function, division, absolute_import, \
 
 from ..status import PENDING, RUNNING, COMPLETED, CANCELLED, FAILED
 
-opt_replacements = {
+resource_replacements = {
     'jobname': ('--job-name',      lambda s: str(s).strip() ),
     'queue'  : ('--partition',     lambda s: str(s).strip() ),
     'time'   : ('--time',          lambda s: str(s).strip() ),
@@ -18,12 +18,12 @@ opt_replacements = {
 }
 
 
-def translate_options(options_dict):
-    """Translate dictionary of options into array of options for SLURM"""
+def translate_resources(resources_dict):
+    """Translate dictionary of resources into array of options for SLURM"""
     opt_array = []
-    for (key, val) in options_dict.items():
-        if key in opt_replacements:
-            slurm_key, converter = opt_replacements[key]
+    for (key, val) in resources_dict.items():
+        if key in resource_replacements:
+            slurm_key, converter = resource_replacements[key]
             val = converter(val)
         else:
             slurm_key = key
@@ -89,8 +89,8 @@ backend = {
                            ['sacct', '--format=state', '-n', '-j %s' % job_id],
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['scancel', str(job_id)],
-    'translate_options': translate_options,
-    'default_opts': {
+    'translate_resources': translate_resources,
+    'default_resources': {
         'nodes'  : 1,
         'threads': 1,
     },

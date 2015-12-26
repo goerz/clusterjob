@@ -4,7 +4,7 @@ LPBS backend
 from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 
-from . pbs import translate_options, get_job_id, get_job_status
+from . pbs import translate_resources, get_job_id, get_job_status
 
 backend = {
     'name': 'lpbs',
@@ -17,8 +17,8 @@ backend = {
     'cmd_status_finished': (lambda job_id: ['lqstat', str(job_id)],
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['lqdel', str(job_id) ],
-    'translate_options': translate_options,
-    'default_opts': {
+    'translate_resources': translate_resources,
+    'default_resources': {
         'nodes'  : 1,
         'threads': 1,
         '-V': True,    # export all environment variables
