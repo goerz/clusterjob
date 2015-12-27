@@ -1,5 +1,5 @@
 PROJECT_NAME = clusterjob
-PACKAGES =  pip click
+PACKAGES =  pip click ipython sphinx
 TESTPYPI = https://testpypi.python.org/pypi
 
 TESTOPTIONS = --doctest-modules
