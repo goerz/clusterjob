@@ -67,8 +67,7 @@ have the following structure of keys and values:
         'XXX_ARRAY_INDEX' => var containing job array/tast index
         'XXX_NODELIST'    => var containing  hostname(s) of job nodes
 """
-from __future__ import print_function, division, absolute_import, \
-                       unicode_literals
+from __future__ import absolute_import
 
 from . import slurm
 

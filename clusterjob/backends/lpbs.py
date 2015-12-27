@@ -1,8 +1,7 @@
 """
 LPBS backend
 """
-from __future__ import print_function, division, absolute_import, \
-                       unicode_literals
+from __future__ import absolute_import
 
 from . pbs import translate_resources, get_job_id, get_job_status
 

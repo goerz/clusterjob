@@ -1,8 +1,7 @@
 """
 PBS/TORQUE backend
 """
-from __future__ import print_function, division, absolute_import, \
-                       unicode_literals
+from __future__ import absolute_import
 
 from ..status import PENDING, RUNNING, COMPLETED
 
