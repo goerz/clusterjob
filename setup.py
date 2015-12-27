@@ -10,10 +10,7 @@ setup(name='clusterjob',
       author_email='goerz@stanford.edu',
       url='https://github.com/goerz/clusterjob',
       license='GPL',
-      install_requires=[
-          'click>=5.0',
-      ],
-      extras_require={'dev': ['pytest',]},
+      extras_require={'dev': ['pytest', 'pytest-capturelog']},
       packages=['clusterjob', 'clusterjob.backends'],
       scripts=[],
       classifiers=[
