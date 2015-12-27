@@ -13,8 +13,10 @@ except ImportError:
 # pytest-capturelog fixutres: caplog
 
 def get_methods(obj):
-    """Get list of methods of object"""
-    return sorted([k for (k, v) in inspect.getmembers(obj, inspect.ismethod)])
+    """Get list of methods of object or class"""
+    return sorted([k for (k, v) in inspect.getmembers(obj, inspect.isroutine)])
+    # isroutine works in Python 2 and Python 3, while ismethod does not work in
+    # Python 3 if obj is a class (since the methods are not *bound*)
 
 
 def get_attributes(obj, hidden=False):
