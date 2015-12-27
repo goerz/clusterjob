@@ -13,13 +13,21 @@ __version__ = "2.0.0-dev"
 import os
 import subprocess as sp
 import tempfile
+import re
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+try:
+    from ConfigParser import ConfigParser
+    from ConfigParser import Error as ConfigParserError
+except ImportError:
+    # Python 3
+    from configparser import ConfigParser
+    from configparser import Error as ConfigParserError
 from glob import glob
 from textwrap import dedent
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import logging
 import importlib
 import pprint
@@ -32,6 +40,25 @@ from .status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
 from .utils import set_executable, run_cmd, mkdir, time_to_seconds
 from .backends import check_backend
 
+
+def _init_with_read_defaults(cls):
+    """Class decorator that calls the read_defaults class method in order to
+    set default values for class attributes"""
+    cls.read_defaults(filename=None)
+    return cls
+
+def _init_default_backends(cls):
+    """Register all backends defined in `clusterjob.backends`"""
+    for __, module_name, __ \
+    in pkgutil.walk_packages(clusterjob.backends.__path__):
+        mod = importlib.import_module(
+                'clusterjob.backends.%s' % module_name)
+        cls.register_backend(mod.backend)
+    return cls
+
+
+@_init_default_backends
+@_init_with_read_defaults
 class JobScript(object):
     """
     Class Attributes
@@ -232,29 +259,34 @@ class JobScript(object):
     # attributes. That is, if there is an instance attribute of the same name
     # shadowing the class attribute, the instance attribute is used in any
     # context
-    _attributes = ['backend', 'shell', 'remote', 'rootdir', 'workdir',
-            'filename', 'prologue', 'epilogue', 'sleep_interval']
-    backend = 'slurm'
-    shell = '/bin/bash'
-    remote = None
-    rootdir = ''
-    workdir = ''
-    filename = None
-    prologue = ''
-    epilogue = ''
-    sleep_interval = None
+    _attributes = {
+        'backend': 'slurm',
+        'shell': '/bin/bash',
+        'remote': None,
+        'rootdir': '',
+        'workdir': '',
+        'filename': None,
+        'prologue': '',
+        'epilogue': '',
+        'sleep_interval': None,
+    }
 
     # the following are genuine class attributes:
-    _protected_attributes = ['backends', 'debug_cmds', 'cache_folder',
-            'cache_prefix', '_cache_counter', '_run_cmd']
+    _protected_attributes = {
+        'backends': {},
+        'debug_cmds': False,
+        'cache_folder': None,
+        'cache_prefix': 'clusterjob',
+        '_cache_counter': 0,
+        '_run_cmd': run_cmd, # for easy mocking
+    }
     # Trying to create an instance  attribute of the same name will raise an
     # AttributeError.
-    backends = {}
-    debug_cmds = False
-    cache_folder = None
-    cache_prefix = 'clusterjob'
-    _cache_counter = 0
-    _run_cmd = run_cmd # to allow easy mocking
+
+    # The class attributes listed in _attributes and _protected_attributes are
+    # created and initialized by the _init_with_read_defaults class decorator,
+    # which runs the `read_defaults` class method with `filename=None` after
+    # the class definition was processed.
 
     # the `resources` class attribute is copied into an instance attribute on
     # every instantiation
@@ -344,19 +376,6 @@ class JobScript(object):
 
         self.body = body
 
-        if len(self.backends) == 0:
-            # register all available backends
-            for __, module_name, __ \
-            in pkgutil.walk_packages(clusterjob.backends.__path__):
-                mod = importlib.import_module(
-                      'clusterjob.backends.%s' % module_name)
-                self.register_backend(mod.backend)
-            # perform some consistency checks
-            for attr in self.__class__._attributes:
-                assert attr in self.__class__.__dict__
-            for attr in self.__class__._protected_attributes:
-                assert attr in self.__class__.__dict__
-
         # There is no way to preserve the order of the kwargs, so we sort them
         # to at least guarantee a stable behavior
         for kw in sorted(kwargs):
@@ -375,14 +394,162 @@ class JobScript(object):
             raise AttributeError("'%s' can only be set as a class attribute"
                                  % name)
         else:
-            if name == 'backend':
-                if not value in self.backends:
-                    raise ValueError("Unknown backend %s" % value)
-            elif value in ['rootdir', 'workdir']:
-                value = value.strip()
-                if value.endswith('/'):
-                    value = value[:-1] # strip trailing slash
-            self.__dict__[name] = value
+            self.__dict__[name] = self._sanitize_attr(name, value)
+
+    @classmethod
+    def _sanitize_attr(cls, name, value):
+        if name == 'backend':
+            if not value in cls.backends:
+                raise ValueError("Unknown backend %s" % value)
+        elif name in ['rootdir', 'workdir']:
+            value = value.strip()
+            if value.endswith('/'):
+                value = value[:-1] # strip trailing slash
+        elif name in ['prologue', 'epilogue']:
+            value = dedent(value).strip()
+        return value
+
+    @classmethod
+    def read_defaults(cls, filename=None):
+        """Set class attributes from the INI file with the given file name
+
+        The file must be in the format specified in
+        https://docs.python.org/3.5/library/configparser.html#supported-ini-file-structure
+        with the default ConfigParser settings. It must contain exactly one or
+        both of the sections "Attributes" and "Resources" (case sensitive). The
+        key-value pairs in the Attributes sections are set as class attributes,
+        whereas the key-value pairs in the "Resources" section are set as keys
+        and values in the `resources` class attribute.
+
+        All keys must be start with a letter, and must consist only of letters,
+        numbers, and underscores. Keys are case-insensitive, and are converted
+        to lower case. The key names 'resources' and 'backends' may not be
+        used. An example for a valid config file is
+
+            [Attributes]
+            remote = login.cluster.edu
+            prologue =
+                ssh {remote} 'mkdir -p {rootdir}/{workdir}'
+                rsync -av {workdir}/ {remote}:{rootdir}/{workdir}
+            epilogue = rsync -av {remote}:{rootdir}/{workdir}/ {workdir}
+            rootdir = ~/jobs/
+            # the following is a new attribute
+            text = Hello World
+
+            [Resources]
+            queue = exec
+            nodes = 1
+            threads = 1
+            mem = 10
+
+        If no filename is given, reset all class attributes to their initial
+        value, and delete any attributes that do not exist by default. This
+        restores the JobScript class to a pristine state.
+        """
+        logger = logging.getLogger(__name__)
+        def attr_setter(key, val):
+            val = cls._sanitize_attr(key, val)
+            logger.debug("Set class attribute %s = %s",  key, val)
+            setattr(cls, key, val)
+        def rsrc_setter(key, val):
+            logger.debug("Set class resources key %s = %s", key, val)
+            cls.resources[key] = val
+        if filename is None:
+            # restore the original class attributes
+            known_attrs = set.union(set(cls._attributes.keys()),
+                                    set(cls._protected_attributes.keys()))
+            for attr in list(cls.__dict__.keys()):
+                if ((not attr.startswith('_'))
+                and (attr not in known_attrs)
+                and (not callable(getattr(cls, attr)))):
+                    logger.debug("Removing class attribute '%s'", attr)
+                    delattr(cls, attr)
+            for attr in cls._attributes:
+                logger.debug("Set class attribute '%s' to original value '%s'",
+                             attr, cls._attributes[attr])
+                setattr(cls, attr, cls._attributes[attr])
+            for attr in cls._protected_attributes:
+                # For the 'backends' attribute, the setattr below sets
+                # cls.backends to a *reference* to
+                # cls._protected_attributes['backends'], not a copy. As a
+                # consequence, any call to register_backend will modify both
+                # locations, and we don't lose registered backends when
+                # resetting.
+                if attr == 'backends':
+                    logger.debug("Keeping known backends: %s", list(
+                                 cls._protected_attributes['backends'].keys()))
+                else:
+                    logger.debug("Set class attribute '%s' to original value "
+                                 "'%s'", attr, cls._protected_attributes[attr])
+                setattr(cls, attr, cls._protected_attributes[attr])
+            cls.resources = OrderedDict()
+            logger.debug("Set class attribute 'resources' to original value "
+                         "OrderedDict()")
+        else:
+            cls._read_inifile(filename, attr_setter, rsrc_setter)
+
+    def read_settings(self, filename):
+        """Set instance attribute from the INI file with the given file name
+
+        This method behaves exactly like the `read_defaults` class method, but
+        instead of setting class attributes, it sets instance attributes
+        ("Attributes" section in the INI file), and instead of setting values
+        in `JobScript.resources`, it sets values in the instance's `resources`
+        dictionary ("Resources" section in the INI file).
+        """
+        logger = logging.getLogger(__name__)
+        def attr_setter(key, val):
+            logger.debug("Set instance attribute %s = %s",  key, val)
+            self.__setattr__(key, val)
+        def rsrc_setter(key, val):
+            logger.debug("Set instance resource key %s = %s",  key, val)
+            self.resources[key] = val
+        self._read_inifile(filename, attr_setter, rsrc_setter)
+
+    @staticmethod
+    def _read_inifile(filename, attr_setter, rsrc_setter):
+        logger = logging.getLogger(__name__)
+        config = ConfigParser()
+        with open(filename) as in_fh:
+            config.readfp(in_fh)
+        setters = { # section name => where to store keys/values
+            'Attributes': attr_setter,
+            'Resources':  rsrc_setter,
+        }
+        readers = {
+            # for values that are not strings, be must specify a reader
+            'Attributes': defaultdict(lambda:config.get,
+                {'debug_cmds': config.getboolean,
+                 'sleep_interval': config.getint,
+                }
+            ),
+            'Resources': defaultdict(lambda:config.get,
+                {'nodes': config.getint,
+                 'threads': config.getint,
+                 'mem': config.getint,
+                }
+            ),
+        }
+        allowed_sections = sorted(setters.keys())
+        if len(config.sections()) == 0:
+            raise ConfigParserError("Inifile must contain at least one "
+            "of the sections "+str(allowed_sections))
+        illegal_keys = ['resources', 'backends']
+        for section in config.sections():
+            logger.debug("Processing section %s in %s", section, filename)
+            if section not in allowed_sections:
+                raise ConfigParserError("Invalid section '%s' in %s. "
+                "Allowed sections are %s" % (section, filename,
+                allowed_sections))
+            for key, __ in config.items(section=section):
+                if not re.match(r'^[a-zA-Z]\w*$', key):
+                    raise ConfigParserError(("Key '%s' is invalid. Keys "
+                    "must be valid attribute names, i.e., they must match "
+                    "the regular expression '^[a-zA-Z]\w*$'") % key)
+                if key in illegal_keys:
+                    raise ConfigParserError("Keys %s are not allowed"
+                                            % str(illegal_keys))
+                setters[section](key, readers[section][key](section, key))
 
     def _default_filename(self):
         """If self.filename is None, attempt to set it from the jobname"""
@@ -436,7 +603,13 @@ class JobScript(object):
         mappings.update(self.resources)
         for line in scriptbody.split("\n"):
             if not line.startswith("#!"):
-                rendered_lines.append(line.format(**mappings))
+                try:
+                    rendered_lines.append(line.format(**mappings))
+                except KeyError as exc:
+                    key = str(exc)[1:-1] # stripping out quotes
+                    raise KeyError("The scriptbody contains a formatting "
+                        "placeholder '{"+key+"}', but there is no matching "
+                        "attribute or resource entry")
         return "\n".join(rendered_lines)
 
     def __str__(self):
