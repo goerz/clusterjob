@@ -273,7 +273,7 @@ class JobScript(object):
 
     # the following are genuine class attributes:
     _protected_attributes = {
-        'backends': {},
+        '_backends': {},
         'debug_cmds': False,
         'cache_folder': None,
         'cache_prefix': 'clusterjob',
@@ -386,6 +386,11 @@ class JobScript(object):
             else:
                 self.resources[kw] = kwargs[kw]
 
+    @property
+    def backends(self):
+        """List of names of registered backends"""
+        return sorted(self._backends.keys())
+
     def __setattr__(self, name, value):
         """Set attributes while preventing shadowing the "genuine" class
         attributes by raising an AttributeError. Perform some checks on the
@@ -399,7 +404,7 @@ class JobScript(object):
     @classmethod
     def _sanitize_attr(cls, name, value):
         if name == 'backend':
-            if not value in cls.backends:
+            if not value in cls._backends:
                 raise ValueError("Unknown backend %s" % value)
         elif name in ['rootdir', 'workdir']:
             value = value.strip()
@@ -457,7 +462,8 @@ class JobScript(object):
         if filename is None:
             # restore the original class attributes
             known_attrs = set.union(set(cls._attributes.keys()),
-                                    set(cls._protected_attributes.keys()))
+                                    set(cls._protected_attributes.keys()),
+                                    set(['backends', ]) )
             for attr in list(cls.__dict__.keys()):
                 if ((not attr.startswith('_'))
                 and (attr not in known_attrs)
@@ -469,15 +475,15 @@ class JobScript(object):
                              attr, cls._attributes[attr])
                 setattr(cls, attr, cls._attributes[attr])
             for attr in cls._protected_attributes:
-                # For the 'backends' attribute, the setattr below sets
-                # cls.backends to a *reference* to
-                # cls._protected_attributes['backends'], not a copy. As a
+                # For the '_backends' attribute, the setattr below sets
+                # cls._backends to a *reference* to
+                # cls._protected_attributes['_backends'], not a copy. As a
                 # consequence, any call to register_backend will modify both
                 # locations, and we don't lose registered backends when
                 # resetting.
-                if attr == 'backends':
+                if attr == '_backends':
                     logger.debug("Keeping known backends: %s", list(
-                                 cls._protected_attributes['backends'].keys()))
+                            cls._protected_attributes['_backends'].keys()))
                 else:
                     logger.debug("Set class attribute '%s' to original value "
                                  "'%s'", attr, cls._protected_attributes[attr])
@@ -557,7 +563,7 @@ class JobScript(object):
             if 'jobname' in self.resources:
                 self.filename = "%s.%s" \
                                  % (self.resources['jobname'],
-                                    self.backends[self.backend]['extension'])
+                                    self._backends[self.backend]['extension'])
 
     def render_script(self, scriptbody, jobscript=False):
         """Render the body of a script. This brings both the main JobScript
@@ -565,20 +571,25 @@ class JobScript(object):
         in which they will be executed.
 
         Rendering proceeds in the following steps:
-        * Add a shebang (e.g. "#!/bin/bash", based on the `shell` attribute).
+
+        * Add a shebang (e.g. ``#!/bin/bash``, based on the `shell` attribute).
           Any existing shebang will be stripped out
+
         * If rendering the body of a JobScript (`jobscript=True`), add
           backedn-specific resource headers (based on the `resources`
           attribute)
+
         * Apply the mappings defined in the `job_vars` entry of the backend,
           replacing environement variables with their proper names. Note that
           the prologue and epilogue will not be run by a scheduler, and thus
           will not have access to the same environment variables as a job
           script.
+
         * Format each line with known attributes (see
           https://docs.python.org/3.5/library/string.html#formatspec).
           In order of precedence (highest to lowest), the following keys will
           be replaced:
+
           - keys in the `resources` attribute
           - instance attributes
           - class attributes
@@ -587,14 +598,15 @@ class JobScript(object):
         rendered_lines = []
         rendered_lines.append("#!%s" % self.shell)
         # add the resource headers
+        backend = self._backends[self.backend]
         if jobscript:
-            opt_translator = self.backends[self.backend]['translate_resources']
+            opt_translator = backend['translate_resources']
             opt_array = opt_translator(self.resources)
-            prefix = self.backends[self.backend]['prefix']
+            prefix = backend['prefix']
             for option in opt_array:
                 rendered_lines.append("%s %s" % (prefix, option))
         # apply environment variable mappings
-        var_replacements = self.backends[self.backend]['job_vars']
+        var_replacements = backend['job_vars']
         for var in var_replacements:
             scriptbody = scriptbody.replace(var, var_replacements[var])
         # apply attribute mappings
@@ -726,7 +738,9 @@ class JobScript(object):
             cache_id = str(cache_id)
         cache_file = None
 
-        ar = AsyncResult(backend=self.backends[self.backend])
+        backend = self._backends[self.backend]
+
+        ar = AsyncResult(backend=backend)
         ar.debug_cmds = self.debug_cmds
 
         if self.cache_folder is not None:
@@ -749,13 +763,13 @@ class JobScript(object):
                                          str_status[ar._status])
                             os.unlink(cache_file)
                             ar = \
-                            AsyncResult(backend=self.backends[self.backend])
+                            AsyncResult(backend=backend)
                             ar.debug_cmds = self.debug_cmds
                             submitted = False
 
         if not submitted:
             self._run_prologue()
-            cmd_submit, id_reader = self.backends[self.backend]['cmd_submit']
+            cmd_submit, id_reader = backend['cmd_submit']
             self.write()
             job_id = None
             try:
@@ -776,7 +790,7 @@ class JobScript(object):
             ar.remote = self.remote
             ar.resources = self.resources.copy()
             ar.cache_file = cache_file
-            ar.backend = self.backends[self.backend]
+            ar.backend = backend
             if self.sleep_interval is not None:
                 ar.sleep_interval = self.sleep_interval
             else:
