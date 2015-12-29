@@ -11,7 +11,7 @@ setup(name='clusterjob',
       url='https://github.com/goerz/clusterjob',
       license='GPL',
       extras_require={'dev': ['pytest', 'pytest-capturelog', 'sphinx',
-                              'sphinx-autobuild']},
+                              'sphinx-autobuild', 'sphinx_rtd_theme']},
       packages=['clusterjob', 'clusterjob.backends'],
       scripts=[],
       classifiers=[
