@@ -20,7 +20,6 @@ import shlex
 # We import the clusterjob just to ensure that it installed in the same
 # environment as sphinx, so that autdoc works
 import clusterjob
-import this_should_break
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
