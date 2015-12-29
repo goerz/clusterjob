@@ -10,8 +10,8 @@ The ``str_status`` dictionary allows to obtain a string representation of a
 status code.
 
 >>> from clusterjob.status import str_status, COMPLETED
->>> str_status[COMPLETED]
-"COMPLETED"
+>>> print(str_status[COMPLETED])
+COMPLETED
 """
 
 PENDING   = -2
