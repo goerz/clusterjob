@@ -5,6 +5,9 @@ REM Command file for Sphinx documentation
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
+if "%SPHINXAPIDOC%" == "" (
+	set SPHINXBUILD=sphinx-apidoc
+)
 set BUILDDIR=build
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% source
 set I18NSPHINXOPTS=%SPHINXOPTS% source
@@ -12,6 +15,8 @@ if NOT "%PAPER%" == "" (
 	set ALLSPHINXOPTS=-D latex_paper_size=%PAPER% %ALLSPHINXOPTS%
 	set I18NSPHINXOPTS=-D latex_paper_size=%PAPER% %I18NSPHINXOPTS%
 )
+set APIDIR=source/API
+set SPHINXAPIOPTS=-f -M --no-toc --separate
 
 if "%1" == "" goto help
 
@@ -44,7 +49,12 @@ if "%1" == "help" (
 if "%1" == "clean" (
 	for /d %%i in (%BUILDDIR%\*) do rmdir /q /s %%i
 	del /q /s %BUILDDIR%\*
+	del /q /s %APIDIR%\*.rst
 	goto end
+)
+
+if not "%1" == "clean" (
+	%SPHINXAPIDOC% %SPHINXAPIOPTS% -o %APIDIR% ../clusterjob
 )
 
 
