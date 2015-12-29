@@ -1,6 +1,4 @@
-"""
-Collection of utility functions
-"""
+"""Collection of utility functions"""
 from __future__ import absolute_import
 import os
 import stat
@@ -17,7 +15,7 @@ CMD_RESPONSE_ENCODING = 'utf-8'
 
 
 def set_executable(filename):
-    """Set the execuable bit on the given filename"""
+    """Set the exectuable bit on the given filename"""
     st = os.stat(filename)
     os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
@@ -29,7 +27,7 @@ def write_file(filename, data):
 
 
 def split_seq(seq, n_chunks):
-    """Split the given sequence into n_chunks. Suitable for distributing an
+    """Split the given sequence into `n_chunks`. Suitable for distributing an
     array of jobs over a fixed number of workers.
 
     >>> split_seq([1,2,3,4,5,6], 3)
@@ -61,62 +59,50 @@ def read_file(filename):
 
 def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
         ssh='ssh'):
-    r'''
-    Run the given cmd in the given workdir, either locally or remotely, and
+    r'''Run the given cmd in the given workdir, either locally or remotely, and
     return the combined stdout/stderr
 
-    Parameters
-    ----------
+    Parameters:
+        cmd (list of str or str): Command to execute, as list consisting of the
+            command, and options.  Alternatively, the command can be given a
+            single string, which will then be executed as a shell command. Only
+            use shell commands when necessary, e.g. when the command involves a
+            pipe.
+        remote (None or str): If None, run command locally. Otherwise, run on
+            the given host (via SSH)
+        rootdir (str, optional): Local or remote root directory. The `workdir`
+            variable is taken relative to `rootdir`. If not specified,
+            effectively the current working directory is used as the root for
+            local commands, and the home directory for remote commands. Note
+            that `~` may be used to indicate the home directory locally or
+            remotely.
+        workdir (str, optional): Local or remote directory from which to run
+            the command, relative to `rootdir`. If `rootdir` is empty, `~` may
+            be used to indicate the home directory.
+        ignore_exit_code (boolean, optional): By default,
+            `subprocess.CalledProcessError` will be raised if the call has an
+            exit code other than 0. This exception can be supressed by passing
+            `ignore_exit_code=False`
+        ssh (str, optional): The executable to be used for ssh. If not a full
+            path, the executable must be in ``$PATH``
 
-    cmd: list of str or str
-        Command to execute, as list consisting of the command, and options.
-        Alternatively, the command can be given a single string, which will
-        then be executed as a shell command. Only use shell commands when
-        necessary, e.g. when the command involves a pipe.
+    Example:
 
-    remote: None or str
-        If None, run command locally. Otherwise, run on the given host (via
-        SSH)
+        >>> import tempfile, os, shutil
+        >>> tempfolder = tempfile.mkdtemp()
+        >>> scriptfile = os.path.join(tempfolder, 'test.sh')
+        >>> with open(scriptfile, 'w') as script_fh:
+        ...     script_fh.writelines(["#!/bin/bash\n", "echo Hello $1\n"])
+        >>> set_executable(scriptfile)
 
-    rootdir: str, optional
-        Local or remote root directory. The `workdir` variable is taken
-        relative to `rootdir`. If not specified, effectively the current
-        working directory is used as the root for local commands, and the home
-        directory for remote commands. Note that `~` may be used to indicate
-        the home directory locally or remotely.
+        >>> run_cmd(['./test.sh', 'World'], remote=None, workdir=tempfolder)
+        'Hello World\n'
 
-    workdir: str, optional
-        Local or remote directory from which to run the command, relative to
-        `rootdir`. If `rootdir` is empty, `~` may be used to indicate the home
-        directory.
+        >>> run_cmd("./test.sh World | tr '[:upper:]' '[:lower:]'", remote=None,
+        ...         workdir=tempfolder)
+        'hello world\n'
 
-    ignore_exit_code: boolean, optional
-        By default, subprocess.CalledProcessError will be raised if the call
-        has an exit code other than 0. This exception can be supressed by
-        passing `ignore_exit_code=False`
-
-    ssh: str, optional
-        The executable to be used for ssh. If not a full path, the executable
-        must be in $PATH
-
-    Example
-    -------
-
-    >>> import tempfile, os, shutil
-    >>> tempfolder = tempfile.mkdtemp()
-    >>> scriptfile = os.path.join(tempfolder, 'test.sh')
-    >>> with open(scriptfile, 'w') as script_fh:
-    ...     script_fh.writelines(["#!/bin/bash\n", "echo Hello $1\n"])
-    >>> set_executable(scriptfile)
-
-    >>> run_cmd(['./test.sh', 'World'], remote=None, workdir=tempfolder)
-    'Hello World\n'
-
-    >>> run_cmd("./test.sh World | tr '[:upper:]' '[:lower:]'", remote=None,
-    ...         workdir=tempfolder)
-    'hello world\n'
-
-    >>> shutil.rmtree(tempfolder)
+        >>> shutil.rmtree(tempfolder)
     '''
     logger = logging.getLogger(__name__)
     workdir = os.path.join(rootdir, workdir)
@@ -164,36 +150,45 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
 
 
 def time_to_seconds(time_str):
-    """
-    Convert a string describing a time duration into seconds. The supported
-    formats are: "minutes", "minutes:seconds", "hours:minutes:seconds",
-    "days-hours", "days-hours:minutes", "days-hours:minutes:seconds",
-    and "days:hours:minutes:seconds"
+    """Convert a string describing a time duration into seconds. The supported
+    formats are::
 
-    >>> time_to_seconds('10')
-    600
-    >>> time_to_seconds('10:00')
-    600
-    >>> time_to_seconds('10:30')
-    630
-    >>> time_to_seconds('1:10:30')
-    4230
-    >>> time_to_seconds('1-1:10:30')
-    90630
-    >>> time_to_seconds('1-0')
-    86400
-    >>> time_to_seconds('1-10')
-    122400
-    >>> time_to_seconds('1-1:10')
-    90600
-    >>> time_to_seconds('1-1:10:30')
-    90630
-    >>> time_to_seconds('1:1:10:30')
-    90630
-    >>> time_to_seconds('1 1:10:30')
-    Traceback (most recent call last):
-      ...
-    ValueError: '1 1:10:30' has invalid pattern
+        minutes
+        minutes:seconds
+        hours:minutes:seconds
+        days-hours
+        days-hours:minutes
+        days-hours:minutes:seconds
+        days:hours:minutes:seconds
+
+    Raises:
+        ValueError: if `time_str` has an invalid format.
+
+    Examples:
+        >>> time_to_seconds('10')
+        600
+        >>> time_to_seconds('10:00')
+        600
+        >>> time_to_seconds('10:30')
+        630
+        >>> time_to_seconds('1:10:30')
+        4230
+        >>> time_to_seconds('1-1:10:30')
+        90630
+        >>> time_to_seconds('1-0')
+        86400
+        >>> time_to_seconds('1-10')
+        122400
+        >>> time_to_seconds('1-1:10')
+        90600
+        >>> time_to_seconds('1-1:10:30')
+        90630
+        >>> time_to_seconds('1:1:10:30')
+        90630
+        >>> time_to_seconds('1 1:10:30')
+        Traceback (most recent call last):
+        ...
+        ValueError: '1 1:10:30' has invalid pattern
     """
     patterns = [
         re.compile(r'^(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)$'),
@@ -223,13 +218,12 @@ def time_to_seconds(time_str):
 
 
 def mkdir(name, mode=0o750):
-    """
-    Implementation of 'mkdir -p': Creates folder with the given `name` and the
-    given permissions (`mode`)
+    """Implementation of ``mkdir -p``: Creates folder with the given `name` and
+    the given permissions (`mode`)
 
     * Create missing parents folder
     * Do nothing if the folder with the given `name` already exists
-    * Raise OSError if there is already a file with the given `name`
+    * Raise `OSError` if there is already a file with the given `name`
     """
     if os.path.isdir(name):
         pass
