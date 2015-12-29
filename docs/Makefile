@@ -58,7 +58,6 @@ $(APIDIR)/clusterjob.rst:
 
 clean:
 	@rm -rf $(BUILDDIR)
-	@rm -rf source/API/*.rst
 
 html: $(APIDIR)/clusterjob.rst
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
