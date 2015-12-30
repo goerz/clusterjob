@@ -70,10 +70,10 @@ class JobScript(object):
         jobname (str): Name of the job. Will be stored in the
             `resources['jobname']` instance attribute.
 
-    The keyword arguments, if given, either set values for keys in the
+    The _keyword arguments, if given, either set values for keys in the
     `resources` instance attribute, or values for instance attributes directly.
     For the former use of setting `resources`, at a minimum, the following
-    keyword arguments are supported:
+    _`keyword arguments` are supported:
 
     Keyword Arguments:
         queue (str):   Name of queue/partition to which to submit the job
@@ -97,16 +97,16 @@ class JobScript(object):
 
     All backends are encouraged to implement a similar behavior.
 
-    Any of the variables listed in **Class/Instance Attributes** below may also
-    be given as keyword arguments during instantiation, in order to initialize
-    the corresponding instance attributes.
+    Any of the attributes listed in **Class/Instance Attributes** below may
+    also be given as keyword arguments during instantiation, in order to
+    initialize the corresponding instance attributes.
 
-    .. rubric:: Class Attributes
+    .. rubric:: _`Class Attributes`
 
-    The following class attributes cannot be shadowed by instance attributes of
-    the same name (attempting to do so raises an `AttributeError`)
+    The following class attributes cannot be shadowed by instance attributes
+    of the same name (attempting to do so raises an `AttributeError`)
 
-    Attributes:
+    Class Attributes:
         cache_folder (str or None): Local folder in which to cache the
             :class:`AsyncResult` instances resulting from job submission. If
             None (default), caching is disabled.
@@ -125,9 +125,9 @@ class JobScript(object):
         The preferred way to set these class attributes is through the
         :meth:`read_defaults` class method.
 
-    .. rubric:: Class/Instance Attributes
+    .. rubric:: _`Class/Instance Attributes`
 
-    The following variables are class attributes, with the expectation that
+    The are class attributes, with the expectation that
     they may be shadowed by instance attributes of the same name.
 
     Attributes:
@@ -208,7 +208,7 @@ class JobScript(object):
                 ssh {remote} 'mkdir -p {rootdir}/{workdir}'
                 rsync -av {workdir}/ {remote}:{rootdir}/{workdir}
 
-    .. rubric:: Instance Attributes
+    .. rubric:: _`Instance Attributes`
 
     The following attributes are local to any `JobScript` instance, and are set
     automatically during instantiation.
@@ -331,11 +331,13 @@ class JobScript(object):
 
     @classmethod
     def register_backend(cls, backend):
-        """Register a new backend
+        """Register a new backend.
 
-        `backend` must be a dictionary that follows the same structure as
-        `clusterjob.backends.slurm.backend`. If the dictionary is found to have
-        the wrong structure, an `AssertionError` will be raised.
+        The `backend` argument must be a dictionary that follows the
+        :ref:`structure <backend dictionary>` described in the
+        :mod:`clusterjob.backends` documentation. If the dictionary is
+        found to have the wrong structure, an `AssertionError`
+        will be raised.
         """
         logger = logging.getLogger(__name__)
         try:
@@ -811,10 +813,10 @@ class JobScript(object):
 
 
 class AsyncResult(object):
-    """
-    Result of submitting a jobscript
+    """Result of submitting a jobscript
 
-    Parameters:
+    Arguments:
+
         backend (dict): Value for the :attr:`backend` attribute
 
     Attributes:
