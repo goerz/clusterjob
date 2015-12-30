@@ -6,6 +6,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.venv
 .Python
 env/
 build/
@@ -51,6 +52,7 @@ coverage.xml
 *.log
 
 # Sphinx documentation
+doc
 docs/_build/
 
 # PyBuilder

@@ -1,6 +1,8 @@
 # clusterjob
 
 [![Build Status](https://travis-ci.org/goerz/clusterjob.svg?branch=develop)](https://travis-ci.org/goerz/clusterjob)
+[![Documentation Status](https://readthedocs.org/projects/clusterjob/badge/?version=latest)](http://clusterjob.readthedocs.org/en/latest/?badge=latest)
+[![Coverage Status](https://coveralls.io/repos/goerz/clusterjob/badge.svg?branch=develop&service=github)](https://coveralls.io/github/goerz/clusterjob?branch=develop)
 
 Python library to manage workflows on traditional HPC cluster systems.
 

@@ -1,11 +1,17 @@
-"""
-Generalized status codes for submitted jobs
+"""Generalized (integer) status codes for submitted jobs::
 
-The status code are ordered such that
+    PENDING < RUNNING < COMPLETED < CANCELLED < FAILED
 
-    pending/running < completed successfully < completed with error
+``COMPLETED`` corresponds to the value 0, such that prior to completion, the
+status code is negative, and on cancellation/failure, the status code is
+positive.
 
-An status code of 0 indicates succesful completion
+The ``str_status`` dictionary allows to obtain a string representation of a
+status code.
+
+>>> from clusterjob.status import str_status, COMPLETED
+>>> print(str_status[COMPLETED])
+COMPLETED
 """
 
 PENDING   = -2

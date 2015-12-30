@@ -7,8 +7,10 @@ logging.basicConfig(level=logging.DEBUG)
 def test_init():
     body = "echo 'Hello World'"
     jobscript = JobScript(body, backend='slurm', jobname='printenv',
-    queue='test', time='00:05:00', nodes=1, threads=1, mem=100,
-    stdout='printenv.out', stderr='printenv.err')
+                          queue='test', time='00:05:00', nodes=1, threads=1,
+                          mem=100, stdout='printenv.out',
+                          stderr='printenv.err')
+    assert jobscript.backends == ['lpbs', 'pbs', 'sge', 'slurm']
     for key in ['jobname', 'queue', 'time', 'nodes', 'threads', 'mem',
             'stdout', 'stderr']:
         assert key in jobscript.resources

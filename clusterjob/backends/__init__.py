@@ -1,71 +1,86 @@
 """
 Collection of backends.
 
-Each submodule defines a `backend` dictionary with the backend options. This
-dictionary (and all user-defined backends that may be passed to the
-`register_backend` class method of clusterjob.Job) must
-have the following structure of keys and values:
+Each submodule defines a `backend` dictionary with the backend options.
+This dictionary (and all user-defined backends that may be passed to the
+:meth:`clusterjob.JobScript.register_backend` class method) must
+have the structure defined below.
 
-    'name': str
-        Name of the backend.
+.. rubric:: _`backend dictionary`
 
-    'prefix': str
-        prefix to be added before each submission option, in the header of the
-        job script. E.g. '#SBATCH' for slurm and '#PBS' for PBS/Torque.
+Keys:
 
-    'extension': str
-        Default filename extension for job script files.
+    name (str): Name of the backend.
 
-    'cmd_submit': tuple of (callable, callable)
-        The first element of the tuple is a callable that receives the name of
-        the job script and must return the command to be used for submission,
-        peferrably as a command list, or alternativey as a shell command
-        string.
+    prefix (str): prefix to be added before each submission option, in the
+        header of the job script. E.g. ``#SBATCH`` for slurm and ``#PBS`` for
+        PBS/Torque.
+
+    extension (str): Default filename extension for job script files.
+
+    cmd_submit (tuple of (callable, callable)): The first element of the tuple
+        is a callable that receives the name of the job script and must return
+        the command to be used for submission, peferrably as a command list, or
+        alternativey as a shell command string.
         The second element of the tuple is a callable that receives
         the shell output from the submission command and returns the job ID
         that the cluster has assigned to the job as a string
 
-    'cmd_status_running': tuple of (callable, callable)
-        The first element of the tuple is a callable that receives the job ID
-        of a running job, and must return the command to be used to check the
-        status of the script (as list or string, see 'cmd_submit')
+    cmd_status_running (tuple of (callable, callable)): The first element of
+        the tuple is a callable that receives the job ID of a running job, and
+        must return the command to be used to check the status of the script
+        (as list or string, see 'cmd_submit')
         The second element of the tuple is a callable that receives the shell
         output from that command and returns one of the status codes defined in
         the `clusterjob.status` module, or None if no status can be determined
         from the output of the command.
 
-    'cmd_status_finished': tuple of (list, callable)
-        A fallback if `cmd_status_running` is not able to determine a status,
-        e.g. because the command defined there does not return any output for
-        jobs that have finished.  It will only be called if the interpreted
-        result of `cmd_status_running` is None.
+    cmd_status_finished (tuple of (list, callable)): A fallback if
+        `cmd_status_running` is not able to determine a status, e.g. because
+        the command defined there does not return any output for jobs that have
+        finished.  It will only be called if the interpreted result of
+        `cmd_status_running` is None.
 
-    'cmd_cancel': list
-        Callable that receives the job ID of a running job, and must return the
-        command that can be used to cancel the job (as a list or string).
+    cmd_cancel (list): Callable that receives the job ID of a running job, and
+        must return the command that can be used to cancel the job (as a list
+        or string).
 
-    'translate_resources': callable
-        The callable receives a dictionary of resource specifications (from
-        clusterjob.JobScript.resources), and must return an array of command
-        line options for the backend's submission script. These, together with
-        the backend's prefix will be written to the header of the job
-        submission script.
+    translate_resources (callable): The callable receives a dictionary of
+        resource specifications (from :attr:`clusterjob.JobScript.resources`),
+        and must return an array of command line options for the backend's
+        submission script. These, together with the backend's prefix will be
+        written to the header of the job submission script.
 
-    'default_resources': dict
-        Default entries for `clusterjob.JobScript.resources` when a JobScript
-        instance is created with the given backend
+    default_resources (dict): Default entries for
+        :attr:`clusterjob.JobScript.resources` when a
+        :class:`clusterjob.JobScript` instance is created with the given
+        backend
 
-    'job_vars': dict
-        Mapping of replacements that will be applied to the body of the job
-        script. The intention is to adjust the name of environment variables to
-        the backend, e.g. '$SLURM_JOB_ID' for SLURM vs. '$PBS_JOBID' for
-        PBS/Torque. It must define replacements for the following strings:
-        'XXX_JOB_ID'      => var containing cluster assigned job ID
-        'XXX_WORKDIR'     => var containing submission directory on the cluster
-        'XXX_HOST'        => var containing hostname of submission node
-        'XXX_JOB_NAME'    => var containing job name
-        'XXX_ARRAY_INDEX' => var containing job array/tast index
-        'XXX_NODELIST'    => var containing  hostname(s) of job nodes
+    job_vars (dict): Mapping of replacements that will be applied to the body
+        of the job script. The intention is to adjust the name of
+        environment variables to the backend, e.g. ``$SLURM_JOB_ID`` for
+        SLURM vs. ``$PBS_JOBID`` for PBS/Torque. It must define replacements
+        for at least the core environment variables listed below, e.g.
+        ``job_vars['$XXX_JOB_ID'] = '$SLURM_JOB_ID'``
+
+.. rubric:: _`Core Environment Variables`
+
+.. glossary::
+
+   ``$XXX_JOB_ID``
+       The job ID assigned by the scheduler after submission
+
+   ``$XXX_WORKDIR``
+       The directory on the cluster from which the job script was submitted.
+
+   ``$XXX_HOST``
+        The hostname on which the job script was submitted
+
+   ``$XXX_JOB_NAME``
+        The name of the job
+
+   ``$XXX_NODELIST``
+        The hostname(s) on which the job script is running
 """
 from __future__ import absolute_import
 
@@ -82,14 +97,11 @@ def check_backend(backend, raise_exception=True):
     Return True if the given backend has the correct structure (as compared
     agains the slurm backend)
 
-    Arguments
-    ---------
-
-    backend: dict
-        Dictionary of backend options
-    raise_exceptions: boolean, optional
-        If True (default), raise an AssertionError if the backend does not
-        match the required structure. Otherwise, return False.
+    Arguments:
+        backend (dict): Dictionary of backend options
+        raise_exceptions (boolean, optional): If True (default), raise an
+            `AssertionError` if the backend does not match the required
+            structure.  Otherwise, return False.
     """
     template = slurm.backend
     try:

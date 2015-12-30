@@ -227,12 +227,12 @@ def test_read_defaults(caplog, tmpdir):
     caplog.setLevel(logging.DEBUG, logger='clusterjob')
     jobscript = JobScript(body="echo 'Hello'", jobname="test")
     assert get_attributes(jobscript) == ['body', 'resources']
-    assert get_attributes(jobscript.__class__) == ['backend', 'backends',
-            'cache_folder', 'cache_prefix', 'debug_cmds', 'epilogue',
-            'filename', 'prologue', 'remote', 'resources', 'rootdir', 'shell',
-            'sleep_interval', 'workdir']
+    assert get_attributes(jobscript.__class__) == ['backend', 'backends', 'cache_folder',
+            'cache_prefix', 'debug_cmds', 'epilogue', 'filename', 'prologue',
+            'remote', 'resources', 'rootdir', 'shell', 'sleep_interval',
+            'workdir']
     for attr in get_attributes(jobscript.__class__):
-        if attr != 'resources':
+        if attr not in ['resources', 'backends']:
             assert getattr(jobscript, attr) == default_class_attr_val(attr)
 
     inidata, expected_attribs, expected_resources = example_inidata()
@@ -261,7 +261,7 @@ def test_read_defaults(caplog, tmpdir):
     JobScript.read_defaults()
     check_resources(jobscript, expected_resources)
     for attr in get_attributes(jobscript.__class__):
-        if attr != 'resources':
+        if attr not in ['resources', 'backends']:
             assert getattr(jobscript, attr) == default_class_attr_val(attr)
     with pytest.raises(KeyError) as exc_info:
         str(jobscript)
@@ -311,7 +311,7 @@ def test_read_settings(caplog, tmpdir):
             'sleep_interval', 'text', 'workdir']
     # class attributes remain unaffected
     for attr in get_attributes(JobScript):
-        if attr != 'resources':
+        if attr not in ['resources', 'backends']:
             assert getattr(JobScript, attr) == default_class_attr_val(attr)
     assert str(jobscript) == dedent(r'''
     #!/bin/sh

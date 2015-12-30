@@ -1,11 +1,14 @@
 PROJECT_NAME = clusterjob
-PACKAGES =  pip click
+PACKAGES =  pip click ipython sphinx
 TESTPYPI = https://testpypi.python.org/pypi
 
-TESTOPTIONS = --doctest-modules
+TESTOPTIONS = -s -x --doctest-modules
 TESTS = ${PROJECT_NAME} tests
 # You may redefine TESTS to run a specific test. E.g.
 #     make test TESTS="tests/test_io.py"
+
+help:
+	@echo "Please use \`make <target>'. Review the Makefile for available targets."
 
 develop:
 	pip install -e .[dev]
@@ -40,6 +43,11 @@ clean:
 	@rm -rf clusterjob/backend/__pycache__
 	@rm -f clusterjob/backends/*.pyc
 	@rm -f tests/*.pyc
+	@$(MAKE) -C docs clean
+	@rm -f doc
+
+distclean: clean
+	@rm -rf .venv
 
 .venv/py27/bin/py.test:
 	@conda create -y -m -p .venv/py27 python=2.7 $(PACKAGES)
@@ -64,5 +72,9 @@ test34: .venv/py34/bin/py.test
 
 test: test27 test33 test34
 
+doc: .venv/py34/bin/py.test
+	$(MAKE) -C docs SPHINXBUILD=../.venv/py34/bin/sphinx-build SPHINXAPIDOC=../.venv/py34/bin/sphinx-apidoc html
+	@ln -s docs/build/html doc
+
 .PHONY: install develop uninstall upload test-upload test-install sdist clean \
-test test27 test33 test34
+test test27 test33 test34 distclean help
