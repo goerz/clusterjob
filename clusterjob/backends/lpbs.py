@@ -18,12 +18,6 @@ backend = {
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['lqdel', str(job_id) ],
     'translate_resources': translate_resources,
-    'default_resources': {
-        'nodes'  : 1,
-        'threads': 1,
-        '-V': True,    # export all environment variables
-        '-j oe': True, # combine output
-    },
     'job_vars': {
         '$XXX_JOB_ID'     : '$PBS_JOB_ID',
         '$XXX_WORKDIR'    : '$PBS_O_WORKDIR',

@@ -100,13 +100,6 @@ backend = {
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['qdel', str(job_id)],
     'translate_resources': translate_resources,
-    'default_resources': {
-        'nodes'  : 1,
-        'threads': 1,
-        '-V': True,    # export all environment variables
-        '-j ': 'y',    # combine output
-        '-cwd': True   # Work in submission directory
-    },
     'job_vars': {
         '$XXX_JOB_ID'     : '$JOB_ID',
         '$XXX_WORKDIR'    : '$SGE_O_WORKDIR',

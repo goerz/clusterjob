@@ -51,11 +51,6 @@ Keys:
         submission script. These, together with the backend's prefix will be
         written to the header of the job submission script.
 
-    default_resources (dict): Default entries for
-        :attr:`clusterjob.JobScript.resources` when a
-        :class:`clusterjob.JobScript` instance is created with the given
-        backend
-
     job_vars (dict): Mapping of replacements that will be applied to the body
         of the job script. The intention is to adjust the name of
         environment variables to the backend, e.g. ``$SLURM_JOB_ID`` for
@@ -106,6 +101,8 @@ def check_backend(backend, raise_exception=True):
     try:
         for key in template:
             assert key in backend, "backend is missing mandatory key %s" % key
+        for key in backend:
+            assert key in template, "backend has an unexpected key %s" % key
         test_options = {
             'name': 'testjob',
             'queue': 'testqueue',

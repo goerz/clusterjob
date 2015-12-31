@@ -90,10 +90,6 @@ backend = {
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['scancel', str(job_id)],
     'translate_resources': translate_resources,
-    'default_resources': {
-        'nodes'  : 1,
-        'threads': 1,
-    },
     'job_vars': {
         '$XXX_JOB_ID'     : '$SLURM_JOB_ID',
         '$XXX_WORKDIR'    : '$SLURM_SUBMIT_DIR',
