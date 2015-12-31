@@ -45,6 +45,7 @@ clean:
 	@rm -f tests/*.pyc
 	@$(MAKE) -C docs clean
 	@rm -f doc
+	@rm -rf htmlcov
 
 distclean: clean
 	@rm -rf .venv
@@ -62,15 +63,15 @@ distclean: clean
 	@.venv/py34/bin/pip install -e .[dev]
 
 test27: .venv/py27/bin/py.test
-	.venv/py27/bin/coverage run $< -v $(TESTOPTIONS) $(TESTS)
+	.venv/py27/bin/coverage run --source=$(PROJECT_NAME),tests $< -v $(TESTOPTIONS) $(TESTS)
 	.venv/py27/bin/coverage report -m
 
 test33: .venv/py33/bin/py.test
-	.venv/py33/bin/coverage run $< -v $(TESTOPTIONS) $(TESTS)
+	.venv/py33/bin/coverage run --source=$(PROJECT_NAME),tests $< -v $(TESTOPTIONS) $(TESTS)
 	.venv/py33/bin/coverage report -m
 
 test34: .venv/py34/bin/py.test
-	.venv/py34/bin/coverage run $< -v $(TESTOPTIONS) $(TESTS)
+	.venv/py34/bin/coverage run --source=$(PROJECT_NAME),tests $< -v $(TESTOPTIONS) $(TESTS)
 	.venv/py34/bin/coverage report -m
 
 test: test27 test33 test34
@@ -79,8 +80,9 @@ doc: .venv/py34/bin/py.test
 	$(MAKE) -C docs SPHINXBUILD=../.venv/py34/bin/sphinx-build SPHINXAPIDOC=../.venv/py34/bin/sphinx-apidoc html
 	@ln -s docs/build/html doc
 
-htmlcov/index.html: test34
+coverage: test34
+	@rm -rf htmlcov/index.html
 	.venv/py34/bin/coverage html
 
 .PHONY: install develop uninstall upload test-upload test-install sdist clean \
-test test27 test33 test34 distclean help
+test test27 test33 test34 distclean help coverage
