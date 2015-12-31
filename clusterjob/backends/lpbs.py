@@ -4,6 +4,7 @@ LPBS backend
 from __future__ import absolute_import
 
 from . pbs import translate_resources, get_job_id, get_job_status
+from ..utils import pprint_backend
 
 backend = {
     'name': 'lpbs',
@@ -38,3 +39,5 @@ backend = {
         '${XXX_NODELIST}'   : '`cat $PBS_NODEFILE`',
     },
 }
+
+__doc__ += "\n\n::\n\n" + pprint_backend(backend, indent=4)

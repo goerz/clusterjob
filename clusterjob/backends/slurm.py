@@ -4,6 +4,7 @@ SLURM backend
 from __future__ import absolute_import
 
 from ..status import PENDING, RUNNING, COMPLETED, CANCELLED, FAILED
+from ..utils import pprint_backend
 
 resource_replacements = {
     'jobname': ('--job-name',      lambda s: str(s).strip() ),
@@ -108,3 +109,5 @@ backend = {
         '${XXX_NODELIST}'   : '${SLURM_JOB_NODELIST}',
     },
 }
+
+__doc__ += "\n\n::\n\n" + pprint_backend(backend, indent=4)

@@ -4,6 +4,7 @@ SGE (Sun Grid Engine) backend
 from __future__ import absolute_import
 
 from ..status import RUNNING, COMPLETED
+from ..utils import pprint_backend
 
 resource_replacements = {
     'jobname': ('-N',           lambda s: str(s).strip() ),
@@ -121,3 +122,5 @@ backend = {
         '${XXX_NODELIST}'   : '${HOSTNAME}',
     },
 }
+
+__doc__ += "\n\n::\n\n" + pprint_backend(backend, indent=4)

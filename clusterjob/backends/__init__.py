@@ -93,8 +93,7 @@ COMMON_KEYS = ['name', 'queue', 'time', 'nodes', 'threads', 'mem', 'stdout',
 
 
 def check_backend(backend, raise_exception=True):
-    """
-    Return True if the given backend has the correct structure (as compared
+    """Return True if the given backend has the correct structure (as compared
     agains the slurm backend)
 
     Arguments:

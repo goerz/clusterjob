@@ -5,6 +5,7 @@ import stat
 import sys
 import logging
 import subprocess as sp
+import pprint
 import re
 try:
     from shlex import quote
@@ -232,3 +233,29 @@ def mkdir(name, mode=0o750):
                       "dir, '%s', already exists." % name)
     else:
         os.makedirs(name, mode)
+
+
+def pprint_backend(backend, varname='backend',indent=0):
+    """Return a prettyprinted, multiline string representation of the given
+    `backend` dictionary.
+
+    Parameters:
+        backend (dict): The backend dictionary to pretty-pring (e.g.
+            ``clusterjob.backends.slurm.backend``)
+        varname (str): Variable name, for the default value of
+            ``varname=backend``, the first line of output will start with
+            ``backend = {...``
+        indent (int): Number of spaces by which to indent each line in the
+            output
+    """
+    pretty = pprint.pformat(backend)
+    indent_str = " " * indent
+    lines = []
+    for line_nr, line in enumerate(pretty.split("\n")):
+        if line_nr == 0:
+            line = "%s = %s" % (varname, line)
+        line = re.sub(" at 0x[a-f0-9]+>", ">", line)
+        if len(line) > 0:
+            line = indent_str + line
+        lines.append(line)
+    return "\n".join(lines)
