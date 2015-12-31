@@ -6,6 +6,7 @@ python:
 sudo: false # use container-based infrastructure (pre-requisite for caching)
 install:
   - pip install -e .[dev]
+  - pip install coveralls
 
 script:
   coverage run --source=clusterjob py.test --doctest-modules clusterjob tests
