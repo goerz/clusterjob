@@ -9,3 +9,6 @@ install:
 
 script:
   py.test --doctest-modules clusterjob tests
+
+after_success:
+  - coveralls
