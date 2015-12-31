@@ -8,7 +8,7 @@ install:
   - pip install -e .[dev]
 
 script:
-  py.test --doctest-modules clusterjob tests
+  coverage run --source=clusterjob py.test --doctest-modules clusterjob tests
 
 after_success:
   - coveralls
