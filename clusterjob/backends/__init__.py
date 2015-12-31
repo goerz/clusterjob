@@ -19,9 +19,11 @@ Keys:
     extension (str): Default filename extension for job script files.
 
     cmd_submit (tuple of (callable, callable)): The first element of the tuple
-        is a callable that an instance of :class:`clusterjob.JobScript` and
-        must return the command to be used for submission, preferably as a
-        command list, or alternatively as a shell command string.
+        is a callable that receives an instance of
+        :class:`clusterjob.JobScript` and must return the command to be used
+        for submission, preferably as a command list, or alternatively as a
+        shell command string. It should not modify the `JobScript` instance in
+        any way.
         The second element of the `cmd_submit` tuple is a callable that
         must receive the shell output from the submission command as a string,
         and must return the job ID that the cluster has assigned to the job, as
@@ -36,15 +38,15 @@ Keys:
         the `clusterjob.status` module, or None if no status can be determined
         from the output of the command.
 
-    cmd_status_finished (tuple of (list, callable)): A fallback if
+    cmd_status_finished (tuple of (callable, callable)): A fallback if
         `cmd_status_running` is not able to determine a status, e.g. because
         the command defined there does not return any output for jobs that have
         finished.  It will only be called if the interpreted result of
         `cmd_status_running` is None.
 
-    cmd_cancel (list): Callable that receives the job ID of a running job, and
-        must return the command that can be used to cancel the job (as a list
-        or string).
+    cmd_cancel (callable): Callable that receives the job ID of a running job,
+        and must return the command that can be used to cancel the job (as a
+        list or string).
 
     translate_resources (callable): The callable receives a dictionary of
         resource specifications (from :attr:`clusterjob.JobScript.resources`),
