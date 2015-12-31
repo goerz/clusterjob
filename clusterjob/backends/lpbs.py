@@ -10,7 +10,7 @@ backend = {
     'name': 'lpbs',
     'prefix': '#PBS',
     'extension' : 'pbs',
-    'cmd_submit'         : (lambda job_script: ['lqsub', job_script],
+    'cmd_submit'         : (lambda jobscript: ['lqsub', jobscript.filename],
                             get_job_id),
     'cmd_status_running' : (lambda job_id: ['lqstat', str(job_id)],
                             get_job_status),

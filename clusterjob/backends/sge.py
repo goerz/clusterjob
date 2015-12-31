@@ -92,7 +92,7 @@ backend = {
     'name': 'sge',
     'prefix': '#$',
     'extension' : 'sge',
-    'cmd_submit'         : (lambda job_script: ['qsub', job_script],
+    'cmd_submit'         : (lambda jobscript: ['qsub', jobscript.filename],
                             get_job_id),
     'cmd_status_running' : (lambda job_id: ['qstat', '-j %s' % job_id],
                             get_job_status),

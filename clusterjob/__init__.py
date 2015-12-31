@@ -348,7 +348,8 @@ class JobScript(object):
         """
         logger = logging.getLogger(__name__)
         try:
-            if check_backend(backend):
+            inst = cls(body='', jobname='xxx')
+            if check_backend(backend, inst):
                 cls._backends[backend['name']] = backend
         except AssertionError as e:
             pp = pprint.PrettyPrinter(indent=4)
@@ -767,7 +768,7 @@ class JobScript(object):
             self.write()
             job_id = None
             try:
-                cmd = cmd_submit(self.filename)
+                cmd = cmd_submit(self)
                 job_id = id_reader(
                             self._run_cmd(cmd, self.remote, self.rootdir,
                                           self.workdir, ignore_exit_code=True),

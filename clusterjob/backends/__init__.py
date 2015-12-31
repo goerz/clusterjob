@@ -19,12 +19,13 @@ Keys:
     extension (str): Default filename extension for job script files.
 
     cmd_submit (tuple of (callable, callable)): The first element of the tuple
-        is a callable that receives the name of the job script and must return
-        the command to be used for submission, peferrably as a command list, or
-        alternativey as a shell command string.
-        The second element of the tuple is a callable that receives
-        the shell output from the submission command and returns the job ID
-        that the cluster has assigned to the job as a string
+        is a callable that an instance of :class:`clusterjob.JobScript` and
+        must return the command to be used for submission, preferably as a
+        command list, or alternatively as a shell command string.
+        The second element of the `cmd_submit` tuple is a callable that
+        must receive the shell output from the submission command as a string,
+        and must return the job ID that the cluster has assigned to the job, as
+        a string.
 
     cmd_status_running (tuple of (callable, callable)): The first element of
         the tuple is a callable that receives the job ID of a running job, and
@@ -87,12 +88,13 @@ COMMON_KEYS = ['name', 'queue', 'time', 'nodes', 'threads', 'mem', 'stdout',
     'stderr']
 
 
-def check_backend(backend, raise_exception=True):
+def check_backend(backend, jobscript, raise_exception=True):
     """Return True if the given backend has the correct structure (as compared
     agains the slurm backend)
 
     Arguments:
         backend (dict): Dictionary of backend options
+        jobscript (clusterjob.JobScript): a test instance
         raise_exceptions (boolean, optional): If True (default), raise an
             `AssertionError` if the backend does not match the required
             structure.  Otherwise, return False.
@@ -121,18 +123,25 @@ def check_backend(backend, raise_exception=True):
                 assert str(option) == option
         except Exception as e:
             raise AssertionError("invalid backend %s: %s", backend['name'], e)
-        for key in ['cmd_submit', 'cmd_status_running', 'cmd_status_finished']:
+        try:
+            cmd1, cmd2 = backend['cmd_submit']
+            cmd1(jobscript)
+            cmd2('xxx')
+        except (TypeError, ValueError) as e:
+            raise AssertionError("cmd_submit must a tuple of callables: %s"
+                                    % (e, ))
+        for key in ['cmd_status_running', 'cmd_status_finished']:
             try:
                 cmd1, cmd2 = backend[key]
                 cmd1('xxx')
                 cmd2('xxx')
             except (TypeError, ValueError) as e:
-                raise AssertionError("%s must a a tuple of callables: %s" \
+                raise AssertionError("%s must a tuple of callables: %s"
                                      % (key, e))
         try:
             backend['cmd_cancel']('xxx')
         except TypeError as e:
-            raise AssertionError("cmd_cancel must a a callable: %s" % (e, ))
+            raise AssertionError("cmd_cancel must a callable: %s" % (e, ))
         for key in template['job_vars']:
             assert key in backend['job_vars'], \
             "backend does not recognize job variable %s" % key

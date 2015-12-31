@@ -80,7 +80,7 @@ backend = {
     'name': 'slurm',
     'prefix': '#SBATCH',
     'extension' : 'slr',
-    'cmd_submit'         : (lambda job_script: ['sbatch', job_script],
+    'cmd_submit'         : (lambda jobscript: ['sbatch', jobscript.filename],
                             get_job_id),
     'cmd_status_running' : (lambda job_id: \
                             ['squeue', '-h', '-o %T', '-j %s' % job_id],
