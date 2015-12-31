@@ -227,10 +227,10 @@ def test_read_defaults(caplog, tmpdir):
     caplog.setLevel(logging.DEBUG, logger='clusterjob')
     jobscript = JobScript(body="echo 'Hello'", jobname="test")
     assert get_attributes(jobscript) == ['body', 'resources']
-    assert get_attributes(jobscript.__class__) == ['backend', 'backends', 'cache_folder',
-            'cache_prefix', 'debug_cmds', 'epilogue', 'filename', 'prologue',
-            'remote', 'resources', 'rootdir', 'shell', 'sleep_interval',
-            'workdir']
+    assert get_attributes(jobscript.__class__) == ['backend', 'backends',
+            'cache_folder', 'cache_prefix', 'debug_cmds', 'epilogue',
+            'filename', 'prologue', 'remote', 'resources', 'rootdir', 'scp',
+            'shell', 'sleep_interval', 'ssh', 'workdir']
     for attr in get_attributes(jobscript.__class__):
         if attr not in ['resources', 'backends']:
             assert getattr(jobscript, attr) == default_class_attr_val(attr)

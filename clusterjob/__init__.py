@@ -36,8 +36,9 @@ import time
 
 import clusterjob.backends
 from .status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
-    str_status)
-from .utils import set_executable, run_cmd, mkdir, time_to_seconds
+        str_status)
+from .utils import (set_executable, run_cmd, upload_file, mkdir,
+        time_to_seconds)
 from .backends import check_backend
 
 
@@ -169,6 +170,10 @@ class JobScript(object):
             submission. If None, the value for that attribute will be
             automatically determined between 10 and 1800 seconds, depending on
             the projected runtime of the job.
+        ssh (str): The executable to use for ssh. If not a full path, must be
+            in the ``$PATH``.
+        scp (str): The executable to use for scp. If not a full path, must be
+            in the ``$PATH``.
 
     This allows to define defaults for all jobs by setting the class attribute,
     and overriding them for specific jobs by setting the instance attribute.
@@ -305,6 +310,8 @@ class JobScript(object):
         'prologue': '',
         'epilogue': '',
         'sleep_interval': None,
+        'ssh': 'ssh',
+        'scp': 'scp',
     }
 
     # the following are genuine class attributes:
@@ -314,7 +321,8 @@ class JobScript(object):
         'cache_folder': None,
         'cache_prefix': 'clusterjob',
         '_cache_counter': 0,
-        '_run_cmd': run_cmd, # for easy mocking
+        '_run_cmd': run_cmd,          # for easy mocking
+        '_upload_file': upload_file,  # for easy mocking
     }
     # Trying to create an instance  attribute of the same name will raise an
     # AttributeError.
@@ -632,7 +640,7 @@ class JobScript(object):
             raise ValueError("filename not given")
         filepath = os.path.split(filename)[0]
         self._run_cmd(['mkdir', '-p', filepath], remote,
-                      ignore_exit_code=False)
+                      ignore_exit_code=False, ssh=self.ssh)
 
         # Write / Upload
         if remote is None:
@@ -645,7 +653,7 @@ class JobScript(object):
                 tempfilename = run_fh.name
             set_executable(tempfilename)
             try:
-                upload_file(tempfilename, remote, filename)
+                self._upload_file(tempfilename, remote, filename, scp=self.scp)
             finally:
                 os.unlink(tempfilename)
 
@@ -762,7 +770,8 @@ class JobScript(object):
                 cmd = cmd_submit(self.filename)
                 job_id = id_reader(
                             self._run_cmd(cmd, self.remote, self.rootdir,
-                                          self.workdir, ignore_exit_code=True))
+                                          self.workdir, ignore_exit_code=True),
+                                          ssh=self.ssh)
                 if job_id is None:
                     logger.error("Failed to submit job")
                     status = FAILED
@@ -868,13 +877,14 @@ class AsyncResult(object):
         else:
             cmd_status, status_reader = self.backend['cmd_status_running']
             cmd = cmd_status(self.job_id)
-            response = self._run_cmd(cmd, self.remote, ignore_exit_code=True)
+            response = self._run_cmd(cmd, self.remote, ignore_exit_code=True,
+                                     ssh=self.ssh)
             status = status_reader(response)
             if status is None:
                 cmd_status, status_reader = self.backend['cmd_status_finished']
                 cmd = cmd_status(self.job_id)
                 response = self._run_cmd(cmd, self.remote,
-                                         ignore_exit_code=True)
+                                         ignore_exit_code=True, ssh=self.ssh)
                 status = status_reader(response)
             prev_status = self._status
             self._status = status
@@ -945,7 +955,7 @@ class AsyncResult(object):
             return
         cmd_cancel = self.backend['cmd_cancel']
         cmd = cmd_cancel(self.job_id)
-        self._run_cmd(cmd, self.remote, ignore_exit_code=True)
+        self._run_cmd(cmd, self.remote, ignore_exit_code=True, ssh=self.ssh)
         self._status = CANCELLED
         self.dump()
 
