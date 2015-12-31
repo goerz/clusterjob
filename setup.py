@@ -12,7 +12,7 @@ setup(name='clusterjob',
       license='GPL',
       extras_require={'dev': ['pytest', 'pytest-capturelog', 'sphinx',
                               'sphinx-autobuild', 'sphinx_rtd_theme',
-                              'coverage']},
+                              'coverage', 'pytest-cov']},
       packages=['clusterjob', 'clusterjob.backends'],
       scripts=[],
       classifiers=[

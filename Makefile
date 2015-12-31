@@ -2,7 +2,7 @@ PROJECT_NAME = clusterjob
 PACKAGES =  pip click ipython sphinx coverage
 TESTPYPI = https://testpypi.python.org/pypi
 
-TESTOPTIONS = -s -x --doctest-modules
+TESTOPTIONS = -s -x --doctest-modules --cov=$(PROJECT_NAME)
 TESTS = ${PROJECT_NAME} tests
 # You may redefine TESTS to run a specific test. E.g.
 #     make test TESTS="tests/test_io.py"
@@ -63,16 +63,13 @@ distclean: clean
 	@.venv/py34/bin/pip install -e .[dev]
 
 test27: .venv/py27/bin/py.test
-	.venv/py27/bin/coverage run --source=$(PROJECT_NAME),tests $< -v $(TESTOPTIONS) $(TESTS)
-	.venv/py27/bin/coverage report -m
+	$< -v $(TESTOPTIONS) $(TESTS)
 
 test33: .venv/py33/bin/py.test
-	.venv/py33/bin/coverage run --source=$(PROJECT_NAME),tests $< -v $(TESTOPTIONS) $(TESTS)
-	.venv/py33/bin/coverage report -m
+	$< -v $(TESTOPTIONS) $(TESTS)
 
 test34: .venv/py34/bin/py.test
-	.venv/py34/bin/coverage run --source=$(PROJECT_NAME),tests $< -v $(TESTOPTIONS) $(TESTS)
-	.venv/py34/bin/coverage report -m
+	$< -v $(TESTOPTIONS) $(TESTS)
 
 test: test27 test33 test34
 
