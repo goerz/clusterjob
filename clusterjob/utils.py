@@ -58,6 +58,25 @@ def read_file(filename):
         return in_fh.read()
 
 
+def upload_file(localfile, remote, remotefile, scp='scp'):
+    """Run ``{scp} {localfile} {remote}:{remotefile}``
+
+    Parameters:
+        localfile (str): relative of absolute path to a local file
+        remote (str): Host on which to put the file
+        remotefile (str): remote path where to put the file. May start with '~'
+            to indicate the home directory.
+        scp (str): the scp executables. If not a full path, the executable must
+            be in ``$PATH``.
+
+    Raises:
+        subprocess.CalledProcessError: if call to `scp` fails.
+    """
+    sp.check_output(
+        [scp, tempfilename, remote+':'+filename],
+        stderr=sp.STDOUT)
+
+
 def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
         ssh='ssh'):
     r'''Run the given cmd in the given workdir, either locally or remotely, and

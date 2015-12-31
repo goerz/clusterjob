@@ -12,7 +12,6 @@ from __future__ import absolute_import
 __version__ = "2.0.0-dev"
 
 import os
-import subprocess as sp
 import tempfile
 import re
 try:
@@ -646,9 +645,7 @@ class JobScript(object):
                 tempfilename = run_fh.name
             set_executable(tempfilename)
             try:
-                sp.check_output(
-                    ['scp', tempfilename, remote+':'+filename],
-                    stderr=sp.STDOUT)
+                upload_file(tempfilename, remote, filename)
             finally:
                 os.unlink(tempfilename)
 
