@@ -69,6 +69,8 @@ class JobScript(object):
             the :meth:`render_script` method before execution.
         jobname (str): Name of the job. Will be stored in the
             `resources['jobname']` instance attribute.
+        aux_scripts (dict(str=>str), optional): dictionary of auxiliary
+            scripts, to be stored in the `aux_scripts` attribute.
 
     The _keyword arguments, if given, either set values for keys in the
     `resources` instance attribute, or values for instance attributes directly.
@@ -225,6 +227,13 @@ class JobScript(object):
             requirements. Set on instantiation, based on the default values in
             the `resources` class attribute and the keyword arguments passed to
             the instantiator.
+        aux_scripts (dict(str=>str)): Dictionary mapping filenames to script
+            bodies for any auxiliary scripts. As the main job script (`body`)
+            is written during submission, any script defined in this
+            dictionary will also be rendered using the :meth:`render_script`
+            method and will be written in the same folder as the main script.
+            While generally not needed, auxiliary scripts may be useful in
+            structuring a large job.
 
     Example:
 
@@ -362,11 +371,15 @@ class JobScript(object):
             for file in glob(os.path.join(cls.cache_folder, '*')):
                 os.unlink(file)
 
-    def __init__(self, body, jobname, **kwargs):
+    def __init__(self, body, jobname, aux_scripts=None, **kwargs):
         self.resources = self.__class__.resources.copy()
         self.resources['jobname'] = jobname
 
         self.body = body
+
+        self.aux_scripts = {}
+        if aux_scripts is not None:
+            self.aux_scripts = {}
 
         # There is no way to preserve the order of the kwargs, so we sort them
         # to at least guarantee a stable behavior
@@ -560,7 +573,7 @@ class JobScript(object):
 
     def render_script(self, scriptbody, jobscript=False):
         """Render the body of a script. This brings both the main `body`, as
-        well as the `prologue` and `epilogue` scripts into the
+        well as the `prologue`, `epilogue`, and any auxiliary scripts into the
         final form in which they will be executed.
 
         Rendering proceeds in the following steps:
@@ -636,21 +649,21 @@ class JobScript(object):
             filename = os.path.join(self.rootdir, self.workdir, filename)
         else:
             remote = None
-
         if filename is None:
             raise ValueError("filename not given")
+        self._write_script(str(self), filename, remote)
+
+    def _write_script(self, scriptbody, filename, remote):
         filepath = os.path.split(filename)[0]
         self._run_cmd(['mkdir', '-p', filepath], remote,
                       ignore_exit_code=False, ssh=self.ssh)
-
-        # Write / Upload
         if remote is None:
             with open(filename, 'w') as run_fh:
-                run_fh.write(str(self))
+                run_fh.write(scriptbody)
             set_executable(filename)
         else:
             with tempfile.NamedTemporaryFile('w', delete=False) as run_fh:
-                run_fh.write(str(self))
+                run_fh.write(scriptbody)
                 tempfilename = run_fh.name
             set_executable(tempfilename)
             try:
@@ -766,6 +779,12 @@ class JobScript(object):
             self._run_prologue()
             cmd_submit, id_reader = backend['cmd_submit']
             self.write()
+            for filename in self.aux_scripts:
+                self._write_script(
+                    scriptbody=self.render_script(self.aux_scripts[filename]),
+                    filename=os.path.join(self.rootdir, self.workdir,
+                                          filename),
+                    remote=self.remote)
             job_id = None
             try:
                 cmd = cmd_submit(self)

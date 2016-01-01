@@ -226,7 +226,7 @@ def test_read_defaults(caplog, tmpdir):
     JobScript.read_defaults() # reset
     caplog.setLevel(logging.DEBUG, logger='clusterjob')
     jobscript = JobScript(body="echo 'Hello'", jobname="test")
-    assert get_attributes(jobscript) == ['body', 'resources']
+    assert get_attributes(jobscript) == ['aux_scripts', 'body', 'resources']
     assert get_attributes(jobscript.__class__) == ['backend', 'backends',
             'cache_folder', 'cache_prefix', 'debug_cmds', 'epilogue',
             'filename', 'prologue', 'remote', 'resources', 'rootdir', 'scp',
@@ -244,7 +244,7 @@ def test_read_defaults(caplog, tmpdir):
     # the resources
     JobScript.read_defaults(ini_filename)
     jobscript = JobScript(body="echo '{text}'", jobname="test")
-    assert get_attributes(jobscript) == ['body', 'resources']
+    assert get_attributes(jobscript) == ['aux_scripts', 'body', 'resources']
     check_attributes(jobscript, expected_attribs)
     check_resources(jobscript, expected_resources)
     assert str(jobscript) == dedent(r'''
@@ -292,7 +292,7 @@ def test_read_settings(caplog, tmpdir):
     JobScript.read_defaults() # reset
     caplog.setLevel(logging.DEBUG, logger='clusterjob')
     jobscript = JobScript(body="echo '{text}'", jobname="test")
-    assert get_attributes(jobscript) == ['body', 'resources']
+    assert get_attributes(jobscript) == ['aux_scripts', 'body', 'resources']
     jobscript2 = JobScript(body="echo 'Hello'", jobname="test2")
     inidata, expected_attribs, expected_resources = example_inidata()
     p = tmpdir.join("job.ini")
@@ -306,8 +306,8 @@ def test_read_settings(caplog, tmpdir):
     inidata = inidata.replace("cache_folder = cache\n", "")
     p.write(inidata)
     jobscript.read_settings(ini_filename)
-    assert get_attributes(jobscript) == ['backend', 'body', 'epilogue',
-            'prologue', 'remote', 'resources', 'rootdir', 'shell',
+    assert get_attributes(jobscript) == ['aux_scripts', 'backend', 'body',
+            'epilogue', 'prologue', 'remote', 'resources', 'rootdir', 'shell',
             'sleep_interval', 'text', 'workdir']
     # class attributes remain unaffected
     for attr in get_attributes(JobScript):
