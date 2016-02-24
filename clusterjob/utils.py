@@ -62,7 +62,7 @@ def upload_file(localfile, remote, remotefile, scp='scp'):
     """Run ``{scp} {localfile} {remote}:{remotefile}``
 
     Parameters:
-        localfile (str): relative of absolute path to a local file
+        localfile (str): relative or absolute path to a local file
         remote (str): Host on which to put the file
         remotefile (str): remote path where to put the file. May start with '~'
             to indicate the home directory.
@@ -73,7 +73,7 @@ def upload_file(localfile, remote, remotefile, scp='scp'):
         subprocess.CalledProcessError: if call to `scp` fails.
     """
     sp.check_output(
-        [scp, tempfilename, remote+':'+filename],
+        [scp, localfile, remote+':'+remotefile],
         stderr=sp.STDOUT)
 
 
