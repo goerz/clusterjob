@@ -656,8 +656,9 @@ class JobScript(object):
 
     def _write_script(self, scriptbody, filename, remote):
         filepath = os.path.split(filename)[0]
-        self._run_cmd(['mkdir', '-p', filepath], remote,
-                      ignore_exit_code=False, ssh=self.ssh)
+        if len(filepath) > 0:
+            self._run_cmd(['mkdir', '-p', filepath], remote,
+                        ignore_exit_code=False, ssh=self.ssh)
         if remote is None:
             with open(filename, 'w') as run_fh:
                 run_fh.write(scriptbody)
@@ -731,7 +732,6 @@ class JobScript(object):
             :class:`AsyncResult` object
         """
         logger = logging.getLogger(__name__)
-        assert self.filename is not None, 'jobscript must have a filename'
         if self.remote is None:
             logger.info("Submitting job %s locally",
                         self.resources['jobname'])
