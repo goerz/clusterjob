@@ -25,6 +25,7 @@ except ImportError:
     # Python 3
     from configparser import ConfigParser
     from configparser import Error as ConfigParserError
+import subprocess as sp
 from glob import glob
 from textwrap import dedent
 from collections import OrderedDict, defaultdict
