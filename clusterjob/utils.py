@@ -7,6 +7,7 @@ import logging
 import subprocess as sp
 import pprint
 import re
+import json
 try:
     from shlex import quote
 except ImportError:
@@ -167,6 +168,36 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
         response = response.decode(CMD_RESPONSE_ENCODING)
     logger.debug("RESPONSE: ---\n%s\n---", response)
     return response
+
+
+def _wrap_run_cmd(jsonfile, mode='replay'):
+    """Wrapper around :func:`run_cmd` for the testing using a record-replay
+    model
+    """
+    records = []
+    counter = 0
+    json_opts = {'indent': 2, 'separators':(',',': '), 'sort_keys': True}
+    def run_cmd_record(*args, **kwargs):
+        response = run_cmd(*args, **kwargs)
+        records.append({'args': args, 'kwargs': kwargs, 'response': response})
+        with open(jsonfile, 'w') as out_fh:
+            json.dump(records, out_fh, **json_opts)
+        return response
+    def run_cmd_replay(*args, **kwargs):
+        record = records.pop(0)
+        assert list(record['args']) == list(args), \
+            "run_cmd call #%d: Expected args: %s" % (counter+1, str(args))
+        assert record['kwargs'] == kwargs, \
+            "run_cmd call #%d: Expected kwargs: %s" % (counter+1, str(kwargs))
+        return record['response']
+    if mode == 'replay':
+        with open(jsonfile) as in_fh:
+            records = json.load(in_fh)
+        return run_cmd_replay
+    elif mode == 'record':
+        return run_cmd_record
+    else:
+        raise ValueError("Invalid mode")
 
 
 def time_to_seconds(time_str):

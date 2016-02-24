@@ -1,12 +1,9 @@
 from __future__ import print_function
 import os
-from functools import partial
 from clusterjob import JobScript, AsyncResult
 from clusterjob.status import str_status
-from clusterjob.utils import run_cmd
-from distutils import dir_util
+from clusterjob.utils import _wrap_run_cmd
 import pytest
-import json
 try:
     input = raw_input
 except NameError:
@@ -27,34 +24,6 @@ def mode():
     test. When recording, you probably also want to limit the settings_file to
     be limited to only the new test."""
     return 'replay'
-
-
-def wrap_run_cmd(jsonfile, mode='replay'):
-    """Wrapper around clusterjob.utils.run_cmd for the record-replay model"""
-    records = []
-    counter = 0
-    json_opts = {'indent': 2, 'separators':(',',': '), 'sort_keys': True}
-    def run_cmd_record(*args, **kwargs):
-        response = run_cmd(*args, **kwargs)
-        records.append({'args': args, 'kwargs': kwargs, 'response': response})
-        with open(jsonfile, 'w') as out_fh:
-            json.dump(records, out_fh, **json_opts)
-        return response
-    def run_cmd_replay(*args, **kwargs):
-        record = records.pop(0)
-        assert list(record['args']) == list(args), \
-            "run_cmd call #%d: Expected args: %s" % (counter+1, str(args))
-        assert record['kwargs'] == kwargs, \
-            "run_cmd call #%d: Expected kwargs: %s" % (counter+1, str(kwargs))
-        return record['response']
-    if mode == 'replay':
-        with open(jsonfile) as in_fh:
-            records = json.load(in_fh)
-        return run_cmd_replay
-    elif mode == 'record':
-        return run_cmd_record
-    else:
-        raise ValueError("Invalid mode")
 
 
 def test_workflow(settings_file, monkeypatch, mode):
@@ -86,7 +55,7 @@ def test_workflow(settings_file, monkeypatch, mode):
 
     jsonfile = os.path.splitext(settings_file)[0]+".json"
     monkeypatch.setattr(JobScript, '_run_cmd',
-                        staticmethod(wrap_run_cmd(jsonfile, mode)))
+                        staticmethod(_wrap_run_cmd(jsonfile, mode)))
     monkeypatch.setattr(AsyncResult, '_run_cmd',
                         staticmethod(JobScript._run_cmd))
     if mode == 'replay':
