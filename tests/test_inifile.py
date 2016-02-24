@@ -1,6 +1,5 @@
 from textwrap import dedent
 import inspect
-import clusterjob
 from collections import OrderedDict
 from clusterjob import JobScript
 import pytest
