@@ -641,7 +641,8 @@ class JobScript(object):
         None, write to the given *local* file. Otherwise, write to the local or
         remote file specified in the filename attribute, in the folder
         specified by the rootdir and workdir attributes. The folder will be
-        created if it does not exist already.
+        created if it does not exist already. A '~' in `filename` will be
+        expanded to the user's home directory.
         """
         remote = self.remote
         if filename is None:
@@ -652,6 +653,8 @@ class JobScript(object):
             remote = None
         if filename is None:
             raise ValueError("filename not given")
+        if remote is None:
+            filename = os.path.expanduser(filename)
         self._write_script(str(self), filename, remote)
 
     def _write_script(self, scriptbody, filename, remote):

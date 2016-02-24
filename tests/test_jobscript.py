@@ -1,6 +1,11 @@
 from textwrap import dedent
 from clusterjob import JobScript
 import logging
+import os
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,4 +32,29 @@ def test_init():
     #SBATCH --time=00:05:00
     echo 'Hello World'
     ''').strip()
+
+
+def test_write(tmpdir, monkeypatch):
+    """Check that when writing out a jobscript to file, the filename passed to
+    the `_write_script` method has '~' expaned when writing to a local file,
+    and *not* expanded when wriging to a remote file (there, the expansion will
+    be performed by SSH)
+    """
+    monkeypatch.setattr(JobScript, 'debug_cmds', True)
+    monkeypatch.setattr(JobScript, '_write_script', Mock())
+    body = 'sleep 180'
+    job = JobScript(body, jobname='test_clj')
+    job.rootdir = '~/jobs/'
+    job.workdir = 'job1'
+    job.backend = 'slurm'
+    job.shell = '/bin/bash'
+    job.write()
+    job._write_script.assert_called_with(
+            '#!/bin/bash\n#SBATCH --job-name=test_clj\nsleep 180',
+            os.path.expanduser('~/jobs/job1/test_clj.slr'), None)
+    job.remote = 'remote'
+    job.write()
+    job._write_script.assert_called_with(
+            '#!/bin/bash\n#SBATCH --job-name=test_clj\nsleep 180',
+            '~/jobs/job1/test_clj.slr', 'remote')
 
