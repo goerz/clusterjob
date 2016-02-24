@@ -1,0 +1,142 @@
+[
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/home/clusterjob_test/jobs/job1"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_clj.slr"
+      ],
+      null,
+      "~/jobs",
+      "job1"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5460033\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5460033"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": " PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "scancel",
+        "5460033"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/home/clusterjob_test/jobs/job1"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_clj.slr"
+      ],
+      null,
+      "~/jobs",
+      "job1"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5460034\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5460034"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": " PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5460034"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sacct",
+        "--format=state",
+        "-n",
+        "-j 5460034"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "CANCELLED+ \n CANCELLED \n"
+  }
+]

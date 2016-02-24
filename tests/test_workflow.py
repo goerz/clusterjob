@@ -11,7 +11,7 @@ except NameError:
 # builtin fixtures: tmpdir, monkeypatch
 
 
-@pytest.fixture(params=['slurm_ks.ini', ])
+@pytest.fixture(params=['slurm_ks.ini', 'slurm_local.ini', ])
 def settings_file(request):
     test_module = request.module.__file__
     test_dir, _ = os.path.splitext(test_module)
@@ -42,8 +42,19 @@ def test_workflow(settings_file, monkeypatch, mode):
     monkeypatch.setattr(JobScript, 'debug_cmds', True)
     if mode == 'record':
         prompt = input
+        print(("In replay, HOME will be set from %s to "
+               "'/home/clusterjob_test'. You may have to edit the recorded "
+               "json file to account for this.")
+              % os.path.environ['HOME'])
     elif mode == 'replay':
+        monkeypatch.setenv('HOME', '/home/clusterjob_test')
         prompt = print
+        def dummy_write_script(self, scriptbody, filename, remote):
+            filepath = os.path.split(filename)[0]
+            if len(filepath) > 0:
+                self._run_cmd(['mkdir', '-p', filepath], remote,
+                            ignore_exit_code=False, ssh=self.ssh)
+        monkeypatch.setattr(JobScript, '_write_script', dummy_write_script)
     else:
         raise ValueError("Invalid mode")
     body = 'sleep 180'
