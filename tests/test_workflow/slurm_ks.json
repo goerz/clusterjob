@@ -1,0 +1,112 @@
+[
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_clj.slr"
+      ],
+      "kcluster",
+      "",
+      ""
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5460029\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5460029"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "RUNNING\n"
+  },
+  {
+    "args": [
+      [
+        "scancel",
+        "5460029"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_clj.slr"
+      ],
+      "kcluster",
+      "",
+      ""
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5460030\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5460030"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "RUNNING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5460030"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sacct",
+        "--format=state",
+        "-n",
+        "-j 5460030"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": " COMPLETED \n COMPLETED \n"
+  }
+]
