@@ -741,8 +741,8 @@ class JobScript(object):
 
         submitted = False
         if cache_id is None:
-            Job._cache_counter += 1
-            cache_id = str(Job._cache_counter)
+            JobScript._cache_counter += 1
+            cache_id = str(JobScript._cache_counter)
         else:
             cache_id = str(cache_id)
         cache_file = None
