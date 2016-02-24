@@ -331,8 +331,8 @@ class JobScript(object):
         'cache_folder': None,
         'cache_prefix': 'clusterjob',
         '_cache_counter': 0,
-        '_run_cmd': run_cmd,          # for easy mocking
-        '_upload_file': upload_file,  # for easy mocking
+        '_run_cmd': staticmethod(run_cmd),          # for easy mocking
+        '_upload_file': staticmethod(upload_file),  # for easy mocking
     }
     # Trying to create an instance  attribute of the same name will raise an
     # AttributeError.
@@ -876,6 +876,7 @@ class AsyncResult(object):
     """
 
     debug_cmds = False
+    _run_cmd = staticmethod(run_cmd)
 
     def __init__(self, backend):
         self.remote = None
