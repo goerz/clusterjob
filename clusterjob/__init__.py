@@ -751,6 +751,8 @@ class JobScript(object):
 
         ar = AsyncResult(backend=backend)
         ar.debug_cmds = self.debug_cmds
+        ar.ssh = self.ssh
+        ar.scp = self.scp
 
         if self.cache_folder is not None:
             mkdir(self.cache_folder)
@@ -774,6 +776,8 @@ class JobScript(object):
                             ar = \
                             AsyncResult(backend=backend)
                             ar.debug_cmds = self.debug_cmds
+                            ar.ssh = self.ssh
+                            ar.scp = self.scp
                             submitted = False
 
         if not submitted:
@@ -789,10 +793,10 @@ class JobScript(object):
             job_id = None
             try:
                 cmd = cmd_submit(self)
-                job_id = id_reader(
-                            self._run_cmd(cmd, self.remote, self.rootdir,
-                                          self.workdir, ignore_exit_code=True),
-                                          ssh=self.ssh)
+                response = self._run_cmd(cmd, self.remote, self.rootdir,
+                                         self.workdir, ignore_exit_code=True,
+                                         ssh=self.ssh)
+                job_id = id_reader(response)
                 if job_id is None:
                     logger.error("Failed to submit job")
                     status = FAILED
@@ -873,6 +877,12 @@ class AsyncResult(object):
             canceled, failed).  The contents of this variable will be written
             to a temporary file as is, and executed as a script in the current
             working directory.
+
+        ssh (str): The executable to use for ssh. If not a full path, must be
+            in the ``$PATH``.
+
+        scp (str): The executable to use for scp. If not a full path, must be
+            in the ``$PATH``.
     """
 
     debug_cmds = False
@@ -887,6 +897,8 @@ class AsyncResult(object):
         self.job_id = ''
         self._status = CANCELLED
         self.epilogue = None
+        self.ssh = 'ssh'
+        self.scp = 'scp'
 
     @property
     def status(self):
@@ -935,7 +947,8 @@ class AsyncResult(object):
             self.cache_file = cache_file
             with open(cache_file, 'wb') as pickle_fh:
                 pickle.dump((self.remote, self.resources, self.sleep_interval,
-                             self.job_id, self._status, self.epilogue),
+                             self.job_id, self._status, self.epilogue,
+                             self.ssh, self.scp),
                             pickle_fh)
 
     def load(self, cache_file):
@@ -943,7 +956,8 @@ class AsyncResult(object):
         self.cache_file = cache_file
         with open(cache_file, 'rb') as pickle_fh:
             self.remote, self.resources, self.sleep_interval, self.job_id, \
-            self._status, self.epilogue = pickle.load(pickle_fh)
+            self._status, self.epilogue, self.ssh, self.scp \
+            = pickle.load(pickle_fh)
 
 
     def wait(self, timeout=None):
