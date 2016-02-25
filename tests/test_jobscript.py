@@ -67,6 +67,7 @@ def test_write(tmpdir, monkeypatch):
     job.write(filename=filename)
     assert os.path.isfile(filename)
     job.remote = 'remote'
+    monkeypatch.setattr(JobScript, '_run_cmd', Mock())
     monkeypatch.setattr(JobScript, '_upload_file', Mock())
     job.write()
     assert job._upload_file.call_count == 1
