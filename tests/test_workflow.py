@@ -4,6 +4,7 @@ from clusterjob import JobScript, AsyncResult
 from clusterjob.status import str_status
 from clusterjob.utils import _wrap_run_cmd
 import pytest
+from textwrap import dedent
 try:
     input = raw_input
 except NameError:
@@ -26,6 +27,7 @@ def mode():
     return 'replay'
 
 
+@pytest.mark.skipif(True, reason="Temporarily disabled")
 def test_workflow(settings_file, monkeypatch, mode):
     """Given an INI file that configures a job for a particular cluster, check
     the communication with the cluster gives when submitting,
@@ -39,6 +41,27 @@ def test_workflow(settings_file, monkeypatch, mode):
     'record'. This will walk the user through the test interactively, and
     record the communication for later replay.
     """
+    body = r'''
+    echo "####################################################"
+    echo "Job id         : $XXX_JOB_ID"
+    echo "Job name       : $XXX_JOB_NAME"
+    echo "Workdir        : $XXX_WORKDIR"
+    echo "Submission Host: $XXX_HOST"
+    echo "Compute Node   : $XXX_NODELIST"
+    echo "Job started on" `hostname` `date`
+    echo "Current directory:" `pwd`
+    echo "####################################################"
+
+    echo "####################################################"
+    echo "Full Environment:"
+    printenv
+    echo "####################################################"
+
+    sleep 180
+
+    echo "Job Finished: " `date`
+    exit 0
+    '''
     monkeypatch.setattr(JobScript, 'debug_cmds', True)
     if mode == 'record':
         prompt = input
@@ -63,16 +86,28 @@ def test_workflow(settings_file, monkeypatch, mode):
     # The sleep interval must be longer than the job duration for the purpose
     # of our test
     job.sleep_interval = 300
+    job.stdout = 'clusterjob_test.out'
 
     jsonfile = os.path.splitext(settings_file)[0]+".json"
+    test_outfile = os.path.splitext(settings_file)[0]+".out"
     monkeypatch.setattr(JobScript, '_run_cmd',
                         staticmethod(_wrap_run_cmd(jsonfile, mode)))
     monkeypatch.setattr(AsyncResult, '_run_cmd',
                         staticmethod(JobScript._run_cmd))
     if mode == 'replay':
+        # disable file transfer
         monkeypatch.setattr(JobScript, '_upload_file',
                             staticmethod(lambda *args, **kwargs: None))
-
+        epilogue = 'echo ""; echo "STDOUT:"; cat ' + test_outfile
+    else: # mode == 'record'
+        if job.remote is None:
+            local_out = '{rootdir}/{workdir}/' + job.stdout
+            epilogue = 'cp %s %s' % (local_out, test_outfile)
+        else:
+            remote_out = '{remote}:{rootdir}/{workdir}/' + job.stdout
+            epilogue = 'rsync -av %s %s' % (remote_out, test_outfile)
+        epilogue += "\n" + 'echo ""; echo "STDOUT:"; cat ' + test_outfile
+    job.epilogue = epilogue
 
     print("\n*** Submitting Job ***\n")
     ar = job.submit()
@@ -88,5 +123,16 @@ def test_workflow(settings_file, monkeypatch, mode):
     print("\nStatus of running job: "+str_status[ar.status])
     prompt("Please wait for job to finish [Enter]")
     print("\nStatus of finished job: "+str_status[ar.status])
+
+    if mode == 'record':
+        print("\n\nFINISHED TEST -- RECORDING MODE\n\n")
+        print("The interaction has been recorded in %s" % jsonfile)
+        print("The job output has been recorded in %s -- PLEASE REVIEW"
+              % test_outfile)
+        print("You may add these files to the repository as part of the test, "
+              "and switch to REPLAY mode")
+        prompt("Press ENTER to confirm.")
+    else:
+        print("\n\nFINISHED TEST -- REPLAY MODE\n\n")
 
 
