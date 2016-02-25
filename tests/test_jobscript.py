@@ -34,7 +34,7 @@ def test_init():
     ''').strip()
 
 
-def test_write(tmpdir, monkeypatch):
+def test_write_expand_tilde(tmpdir, monkeypatch):
     """Check that when writing out a jobscript to file, the filename passed to
     the `_write_script` method has '~' expaned when writing to a local file,
     and *not* expanded when wriging to a remote file (there, the expansion will
@@ -58,3 +58,15 @@ def test_write(tmpdir, monkeypatch):
             '#!/bin/bash\n#SBATCH --job-name=test_clj\nsleep 180',
             '~/jobs/job1/test_clj.slr', 'remote')
 
+def test_write(tmpdir, monkeypatch):
+    body = 'sleep 180'
+    job = JobScript(body, jobname='test_clj')
+    job.backend = 'slurm'
+    filename = str(tmpdir.join('job.slr'))
+    assert not os.path.isfile(filename)
+    job.write(filename=filename)
+    assert os.path.isfile(filename)
+    job.remote = 'remote'
+    monkeypatch.setattr(JobScript, '_upload_file', Mock())
+    job.write()
+    assert job._upload_file.call_count == 1
