@@ -2,18 +2,33 @@
   {
     "args": [
       [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
         "sbatch",
         "test_clj.slr"
       ],
       "kcluster",
-      "",
-      ""
+      ".",
+      "."
     ],
     "kwargs": {
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "Submitted batch job 5460029\n"
+    "response": "Submitted batch job 5460093\n"
   },
   {
     "args": [
@@ -21,7 +36,7 @@
         "squeue",
         "-h",
         "-o %T",
-        "-j 5460029"
+        "-j 5460093"
       ],
       "kcluster"
     ],
@@ -35,7 +50,7 @@
     "args": [
       [
         "scancel",
-        "5460029"
+        "5460093"
       ],
       "kcluster"
     ],
@@ -48,18 +63,33 @@
   {
     "args": [
       [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
         "sbatch",
         "test_clj.slr"
       ],
       "kcluster",
-      "",
-      ""
+      ".",
+      "."
     ],
     "kwargs": {
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "Submitted batch job 5460030\n"
+    "response": "Submitted batch job 5460094\n"
   },
   {
     "args": [
@@ -67,7 +97,7 @@
         "squeue",
         "-h",
         "-o %T",
-        "-j 5460030"
+        "-j 5460094"
       ],
       "kcluster"
     ],
@@ -83,7 +113,7 @@
         "squeue",
         "-h",
         "-o %T",
-        "-j 5460030"
+        "-j 5460094"
       ],
       "kcluster"
     ],
@@ -99,7 +129,7 @@
         "sacct",
         "--format=state",
         "-n",
-        "-j 5460030"
+        "-j 5460094"
       ],
       "kcluster"
     ],
