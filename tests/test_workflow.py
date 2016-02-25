@@ -76,7 +76,6 @@ def workflow_files(request, ini_file):
     return (ini_file, jsonfile, outfile, bodyfile, renderedfile)
 
 
-@pytest.mark.skipif(True, reason="Temporarily disabled")
 def test_workflow(workflow_files, monkeypatch):
     """Given a list of input files (ini_file, jsonfile, outfile, bodyfile,
     renderedfile) that are a record for the interaction with a for a particular
