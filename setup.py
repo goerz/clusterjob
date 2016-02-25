@@ -2,6 +2,13 @@
 from distutils.core import setup
 from clusterjob import __version__
 
+try:
+    # In Python >3.3, 'mock' is part of the standard library
+    import unittest.mock
+    mock_package = []
+except ImportError:
+    # In other versions, it has be to be installed as an exernal package
+    mock_package = ['mock', ]
 
 setup(name='clusterjob',
       version=__version__,
@@ -12,7 +19,7 @@ setup(name='clusterjob',
       license='GPL',
       extras_require={'dev': ['pytest', 'pytest-capturelog', 'sphinx',
                               'sphinx-autobuild', 'sphinx_rtd_theme',
-                              'coverage', 'pytest-cov']},
+                              'coverage', 'pytest-cov'] + mock_package},
       packages=['clusterjob', 'clusterjob.backends'],
       scripts=[],
       classifiers=[
