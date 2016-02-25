@@ -15,7 +15,7 @@ def test_init():
                           queue='test', time='00:05:00', nodes=1, threads=1,
                           mem=100, stdout='printenv.out',
                           stderr='printenv.err')
-    assert jobscript.backends == ['lpbs', 'pbs', 'sge', 'slurm']
+    assert jobscript.backends == ['lpbs', 'lsf', 'pbs', 'sge', 'slurm']
     for key in ['jobname', 'queue', 'time', 'nodes', 'threads', 'mem',
             'stdout', 'stderr']:
         assert key in jobscript.resources

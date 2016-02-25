@@ -11,7 +11,7 @@ except NameError:
 # builtin fixtures: tmpdir, monkeypatch
 
 
-@pytest.fixture(params=['slurm_ks.ini', 'slurm_local.ini', ])
+@pytest.fixture(params=['slurm_ks.ini', 'slurm_local.ini', 'lsf_ds.ini'])
 def settings_file(request):
     test_module = request.module.__file__
     test_dir, _ = os.path.splitext(test_module)
@@ -45,7 +45,7 @@ def test_workflow(settings_file, monkeypatch, mode):
         print(("In replay, HOME will be set from %s to "
                "'/home/clusterjob_test'. You may have to edit the recorded "
                "json file to account for this.")
-              % os.path.environ['HOME'])
+              % os.environ['HOME'])
     elif mode == 'replay':
         monkeypatch.setenv('HOME', '/home/clusterjob_test')
         prompt = print

@@ -1,0 +1,6 @@
+IBM Platform LSF 9.1.1.1 build 220212, Jul 17 2013
+Copyright International Business Machines Corp, 1992-2013.
+US Government Users Restricted Rights - Use, duplication or disclosure
+restricted by GSA ADP Schedule Contract with IBM Corp.
+
+  binary type: linux2.6-glibc2.3-x86_64
