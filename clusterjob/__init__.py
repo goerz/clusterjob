@@ -145,11 +145,11 @@ class JobScript(object):
         remote (str or None): Remote server on which to execute submit
             commands. If None (default), submit locally.
         rootdir (str): Root directory for `workdir`, locally or remote. Defaults
-            to ``''``, i.e., the current working directory. The `rootdir` is
+            to ``'.'``, i.e., the current working directory. The `rootdir` is
             guaranteed not to have a trailing slash.
         workdir (str): Work directory (local or remote) in which the job script
             file will be placed, and from which the submission command will be
-            called. Relative to `rootdir`. Defaults to ``''`` (current working
+            called. Relative to `rootdir`. Defaults to ``'.'`` (current working
             directory). The `workdir` is guaranteed not to have a trailing
             slash.
         filename (str or None): Name of file to which the job script will be
@@ -314,8 +314,8 @@ class JobScript(object):
         'backend': 'slurm',
         'shell': '/bin/bash',
         'remote': None,
-        'rootdir': '',
-        'workdir': '',
+        'rootdir': '.',
+        'workdir': '.',
         'filename': None,
         'prologue': '',
         'epilogue': '',
