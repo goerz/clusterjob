@@ -1,0 +1,128 @@
+Sender: LSF System <lsfadmin@hpa0023>
+Subject: Job 920524: <test_clj> in cluster <lichtenberg> Exited
+
+Job <test_clj> was submitted from host <hla0002> by user <mg44sife> in cluster <lichtenberg>.
+Job was executed on host(s) <hpa0023>, in queue <deflt_centos>, as user <mg44sife> in cluster <lichtenberg>.
+</home/mg44sife> was used as the home directory.
+</home/mg44sife/clusterjob> was used as the working directory.
+Started at Thu Feb 25 22:09:45 2016
+Results reported at Thu Feb 25 22:09:48 2016
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -n 1
+#BSUB -J test_clj
+#BSUB -q deflt_centos
+#BSUB -M 20
+#BSUB -W 5
+#BSUB -o clusterjob_test.out
+
+echo "####################################################"
+echo "Job id         : $LSB_JOBID"
+echo "Job name       : $LSB_JOBNAME"
+echo "Workdir        : $LS_SUBCWD"
+echo "Submission Host: `hostname`"
+echo "Compute Node   : $LSB_HOSTS"
+echo "Job started on" `hostname` `date`
+echo "Current directory:" `pwd`
+echo "####################################################"
+
+sleep 180
+
+echo "Job Finished: " `date`
+exit 0
+
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 130.
+
+Resource usage summary:
+
+    CPU time :               0.43 sec.
+    Max Memory :             3 MB
+    Average Memory :         3.00 MB
+    Total Requested Memory : 21.00 MB
+    Delta Memory :           18.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Processes :          5
+    Max Threads :            6
+
+The output (if any) follows:
+
+####################################################
+Job id         : 920524
+Job name       : test_clj
+Workdir        : /home/mg44sife/clusterjob
+Submission Host: hpa0023
+Compute Node   : hpa0023
+Job started on hpa0023 Thu Feb 25 22:09:46 CET 2016
+Current directory: /home/mg44sife/clusterjob
+####################################################
+Sender: LSF System <lsfadmin@hpa0023>
+Subject: Job 920525: <test_clj> in cluster <lichtenberg> Done
+
+Job <test_clj> was submitted from host <hla0002> by user <mg44sife> in cluster <lichtenberg>.
+Job was executed on host(s) <hpa0023>, in queue <deflt_centos>, as user <mg44sife> in cluster <lichtenberg>.
+</home/mg44sife> was used as the home directory.
+</home/mg44sife/clusterjob> was used as the working directory.
+Started at Thu Feb 25 22:10:17 2016
+Results reported at Thu Feb 25 22:13:17 2016
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -n 1
+#BSUB -J test_clj
+#BSUB -q deflt_centos
+#BSUB -M 20
+#BSUB -W 5
+#BSUB -o clusterjob_test.out
+
+echo "####################################################"
+echo "Job id         : $LSB_JOBID"
+echo "Job name       : $LSB_JOBNAME"
+echo "Workdir        : $LS_SUBCWD"
+echo "Submission Host: `hostname`"
+echo "Compute Node   : $LSB_HOSTS"
+echo "Job started on" `hostname` `date`
+echo "Current directory:" `pwd`
+echo "####################################################"
+
+sleep 180
+
+echo "Job Finished: " `date`
+exit 0
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               1.86 sec.
+    Max Memory :             3 MB
+    Average Memory :         2.08 MB
+    Total Requested Memory : 21.00 MB
+    Delta Memory :           18.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Processes :          5
+    Max Threads :            6
+
+The output (if any) follows:
+
+####################################################
+Job id         : 920525
+Job name       : test_clj
+Workdir        : /home/mg44sife/clusterjob
+Submission Host: hpa0023
+Compute Node   : hpa0023
+Job started on hpa0023 Thu Feb 25 22:10:17 CET 2016
+Current directory: /home/mg44sife/clusterjob
+####################################################
+Job Finished:  Thu Feb 25 22:13:17 CET 2016

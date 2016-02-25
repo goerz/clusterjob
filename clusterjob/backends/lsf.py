@@ -106,7 +106,7 @@ backend = {
     'job_vars': {
         '$XXX_JOB_ID'     : '$LSB_JOBID',
         '$XXX_WORKDIR'    : '$LS_SUBCWD',
-        '$XXX_HOST'       : '`hostname`',
+        '$XXX_HOST'       : '`hostname`', # Not available in LSF
         '$XXX_JOB_NAME'   : '$LSB_JOBNAME',
         '$XXX_ARRAY_INDEX': '$LSB_JOBINDEX',
         '$XXX_NODELIST'   : '$LSB_HOSTS',

@@ -1,23 +1,38 @@
 [
   {
     "args": [
+      [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
       "bsub < \"test_clj.lsf\"",
       null,
-      "",
-      ""
+      ".",
+      "."
     ],
     "kwargs": {
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "[I] possible CPU types    = Haswell(\u001b[1;37mavx2\u001b[0m) Sandy-Bridge(\u001b[1;37mavx\u001b[0m)\u001b[0m\nJob <917530> is submitted to queue <deflt_centos>.\n"
+    "response": "[I] possible CPU types    = Haswell(\u001b[1;37mavx2\u001b[0m) Sandy-Bridge(\u001b[1;37mavx\u001b[0m)\u001b[0m\nJob <920524> is submitted to queue <deflt_centos>.\n"
   },
   {
     "args": [
       [
         "bjobs",
         "-a",
-        "917530"
+        "920524"
       ],
       null
     ],
@@ -25,13 +40,13 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME\n917530  mg44sif RUN   deflt_cent hla0002     i01         test_clj   Feb 25 03:32\n"
+    "response": "JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME\n920524  mg44sif RUN   deflt_cent hla0002     i01         test_clj   Feb 25 22:09\n"
   },
   {
     "args": [
       [
         "bkill",
-        "917530"
+        "920524"
       ],
       null
     ],
@@ -39,27 +54,42 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "Job <917530> is being terminated\n"
+    "response": "Job <920524> is being terminated\n"
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
   },
   {
     "args": [
       "bsub < \"test_clj.lsf\"",
       null,
-      "",
-      ""
+      ".",
+      "."
     ],
     "kwargs": {
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "[I] possible CPU types    = Haswell(\u001b[1;37mavx2\u001b[0m) Sandy-Bridge(\u001b[1;37mavx\u001b[0m)\u001b[0m\nJob <917531> is submitted to queue <deflt_centos>.\n"
+    "response": "[I] possible CPU types    = Haswell(\u001b[1;37mavx2\u001b[0m) Sandy-Bridge(\u001b[1;37mavx\u001b[0m)\u001b[0m\nJob <920525> is submitted to queue <deflt_centos>.\n"
   },
   {
     "args": [
       [
         "bjobs",
         "-a",
-        "917531"
+        "920525"
       ],
       null
     ],
@@ -67,14 +97,14 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME\n917531  mg44sif RUN   deflt_cent hla0002     i01         test_clj   Feb 25 03:33\n"
+    "response": "JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME\n920525  mg44sif RUN   deflt_cent hla0002     i01         test_clj   Feb 25 22:10\n"
   },
   {
     "args": [
       [
         "bjobs",
         "-a",
-        "917531"
+        "920525"
       ],
       null
     ],
@@ -82,6 +112,6 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME\n917531  mg44sif DONE  deflt_cent hla0002     i01         test_clj   Feb 25 03:33\n"
+    "response": "JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME\n920525  mg44sif DONE  deflt_cent hla0002     i01         test_clj   Feb 25 22:10\n"
   }
 ]
