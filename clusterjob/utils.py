@@ -186,9 +186,11 @@ def _wrap_run_cmd(jsonfile, mode='replay'):
     def run_cmd_replay(*args, **kwargs):
         record = records.pop(0)
         assert list(record['args']) == list(args), \
-            "run_cmd call #%d: Expected args: %s" % (counter+1, str(args))
+            "run_cmd call #%d: Obtained args: '%s'; Expected args: '%s'" \
+            % (counter+1, str(args), str(record['args']))
         assert record['kwargs'] == kwargs, \
-            "run_cmd call #%d: Expected kwargs: %s" % (counter+1, str(kwargs))
+            "run_cmd call #%d: Obtained kwargs: '%s'; Expected kwargs: '%s'" \
+            % (counter+1, str(kwargs), str(record['kwargs']))
         return record['response']
     if mode == 'replay':
         with open(jsonfile) as in_fh:
