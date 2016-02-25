@@ -829,11 +829,7 @@ class JobScript(object):
             ar._status = status
             ar.job_id = job_id
             if self.epilogue is not None:
-                epilogue = self.epilogue.format(
-                              fulldir=os.path.join(self.rootdir, self.workdir),
-                              **self.__dict__)
-                if not epilogue.startswith("#!"):
-                    epilogue = "#!" + self.shell + "\n" + epilogue
+                epilogue = self.render_script(self.epilogue)
                 ar.epilogue = epilogue
 
         if block:
