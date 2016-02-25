@@ -1,0 +1,11 @@
+slurmd[its-cs325]: Unable to get current working directory: No such file or directory
+####################################################
+Job id         : 5460096
+Job name       : test_clj
+Workdir        : /gpfs/home07/ag-koch/storage/uk006169/jobs/job1
+Submission Host: its-cs1.its.uni-kassel.de
+Compute Node   : its-cs325
+Job started on its-cs325.its.uni-kassel.de Thu Feb 25 22:44:29 CET 2016
+Current directory: /gpfs/home07/ag-koch/storage/uk006169/jobs/job1
+####################################################
+Job Finished:  Thu Feb 25 22:47:29 CET 2016

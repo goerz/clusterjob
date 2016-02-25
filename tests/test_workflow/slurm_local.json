@@ -28,7 +28,7 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "Submitted batch job 5460033\n"
+    "response": "Submitted batch job 5460095\n"
   },
   {
     "args": [
@@ -36,7 +36,7 @@
         "squeue",
         "-h",
         "-o %T",
-        "-j 5460033"
+        "-j 5460095"
       ],
       null
     ],
@@ -44,13 +44,13 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": " PENDING\n"
+    "response": " RUNNING\n"
   },
   {
     "args": [
       [
         "scancel",
-        "5460033"
+        "5460095"
       ],
       null
     ],
@@ -89,7 +89,7 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "Submitted batch job 5460034\n"
+    "response": "Submitted batch job 5460096\n"
   },
   {
     "args": [
@@ -97,7 +97,7 @@
         "squeue",
         "-h",
         "-o %T",
-        "-j 5460034"
+        "-j 5460096"
       ],
       null
     ],
@@ -105,7 +105,7 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": " PENDING\n"
+    "response": " RUNNING\n"
   },
   {
     "args": [
@@ -113,7 +113,7 @@
         "squeue",
         "-h",
         "-o %T",
-        "-j 5460034"
+        "-j 5460096"
       ],
       null
     ],
@@ -129,7 +129,7 @@
         "sacct",
         "--format=state",
         "-n",
-        "-j 5460034"
+        "-j 5460096"
       ],
       null
     ],
@@ -137,6 +137,6 @@
       "ignore_exit_code": true,
       "ssh": "ssh"
     },
-    "response": "CANCELLED+ \n CANCELLED \n"
+    "response": " COMPLETED \n COMPLETED \n"
   }
 ]
