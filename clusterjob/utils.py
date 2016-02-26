@@ -166,7 +166,14 @@ def run_cmd(cmd, remote, rootdir='', workdir='', ignore_exit_code=False,
         # can safely assume that string operations such as regex matching are
         # possible.
         response = response.decode(CMD_RESPONSE_ENCODING)
-    logger.debug("RESPONSE: ---\n%s\n---", response)
+    if logger.getEffectiveLevel() <= logging.DEBUG:
+        if "\n" in response:
+            if len(response.splitlines()) == 1:
+                logger.debug("RESPONSE: %s", response)
+            else:
+                logger.debug("RESPONSE: ---\n%s\n---", response)
+        else:
+            logger.debug("RESPONSE: '%s'", response)
     return response
 
 
