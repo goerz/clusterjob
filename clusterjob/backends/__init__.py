@@ -59,25 +59,25 @@ Keys:
         environment variables to the backend, e.g. ``$SLURM_JOB_ID`` for
         SLURM vs. ``$PBS_JOBID`` for PBS/Torque. It must define replacements
         for at least the core environment variables listed below, e.g.
-        ``job_vars['$XXX_JOB_ID'] = '$SLURM_JOB_ID'``
+        ``job_vars['$CLUSTERJOB_ID'] = '$SLURM_JOB_ID'``
 
 .. rubric:: _`Core Environment Variables`
 
 .. glossary::
 
-   ``$XXX_JOB_ID``
+   ``$CLUSTERJOB_ID``
        The job ID assigned by the scheduler after submission
 
-   ``$XXX_WORKDIR``
+   ``$CLUSTERJOB_WORKDIR``
        The directory on the cluster from which the job script was submitted.
 
-   ``$XXX_HOST``
+   ``$CLUSTERJOB_SUBMIT_HOST``
         The hostname on which the job script was submitted
 
-   ``$XXX_JOB_NAME``
+   ``$CLUSTERJOB_NAME``
         The name of the job
 
-   ``$XXX_NODELIST``
+   ``$CLUSTERJOB_NODELIST``
         The hostname(s) on which the job script is running
 """
 from __future__ import absolute_import

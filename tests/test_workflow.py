@@ -53,11 +53,11 @@ def workflow_files(request, ini_file):
         with open(bodyfile, 'w') as out_fh:
             out_fh.write(dedent(r'''
             echo "####################################################"
-            echo "Job id         : $XXX_JOB_ID"
-            echo "Job name       : $XXX_JOB_NAME"
-            echo "Workdir        : $XXX_WORKDIR"
-            echo "Submission Host: $XXX_HOST"
-            echo "Compute Node   : $XXX_NODELIST"
+            echo "Job id         : $CLUSTERJOB_ID"
+            echo "Job name       : $CLUSTERJOB_NAME"
+            echo "Workdir        : $CLUSTERJOB_WORKDIR"
+            echo "Submission Host: $CLUSTERJOB_SUBMIT_HOST"
+            echo "Compute Node   : $CLUSTERJOB_NODELIST"
             echo "Job started on" `hostname` `date`
             echo "Current directory:" `pwd`
             echo "####################################################"

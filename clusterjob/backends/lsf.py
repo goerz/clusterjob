@@ -104,18 +104,18 @@ backend = {
     'cmd_cancel'         : lambda job_id: ['bkill', str(job_id)],
     'translate_resources': translate_resources,
     'job_vars': {
-        '$XXX_JOB_ID'     : '$LSB_JOBID',
-        '$XXX_WORKDIR'    : '$LS_SUBCWD',
-        '$XXX_HOST'       : '`hostname`', # Not available in LSF
-        '$XXX_JOB_NAME'   : '$LSB_JOBNAME',
-        '$XXX_ARRAY_INDEX': '$LSB_JOBINDEX',
-        '$XXX_NODELIST'   : '$LSB_HOSTS',
-        '${XXX_JOB_ID}'     : '${LSB_JOBID}',
-        '${XXX_WORKDIR}'    : '${LS_SUBCWD}',
-        '${XXX_HOST}'       : '`hostname`',
-        '${XXX_JOB_NAME}'   : '${LSB_JOBNAME}',
-        '${XXX_ARRAY_INDEX}': '${LSB_JOBINDEX}',
-        '${XXX_NODELIST}'   : '${LSB_HOSTS}',
+        '$CLUSTERJOB_ID'         : '$LSB_JOBID',
+        '$CLUSTERJOB_WORKDIR'    : '$LS_SUBCWD',
+        '$CLUSTERJOB_SUBMIT_HOST': '`hostname`', # Not available in LSF
+        '$CLUSTERJOB_NAME'       : '$LSB_JOBNAME',
+        '$CLUSTERJOB_ARRAY_INDEX': '$LSB_JOBINDEX',
+        '$CLUSTERJOB_NODELIST'   : '$LSB_HOSTS',
+        '${CLUSTERJOB_ID}'         : '${LSB_JOBID}',
+        '${CLUSTERJOB_WORKDIR}'    : '${LS_SUBCWD}',
+        '${CLUSTERJOB_SUBMIT_HOST}': '`hostname`',
+        '${CLUSTERJOB_NAME}'       : '${LSB_JOBNAME}',
+        '${CLUSTERJOB_ARRAY_INDEX}': '${LSB_JOBINDEX}',
+        '${CLUSTERJOB_NODELIST}'   : '${LSB_HOSTS}',
     },
 }
 

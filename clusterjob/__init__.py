@@ -240,8 +240,8 @@ class JobScript(object):
 
         >>> body = r'''
         ... echo "####################################################"
-        ... echo "Job id: $XXX_JOB_ID"
-        ... echo "Job name: $XXX_WORKDIR"
+        ... echo "Job id: $CLUSTERJOB_ID"
+        ... echo "Job name: $CLUSTERJOB_WORKDIR"
         ... echo "Job started on" `hostname` `date`
         ... echo "Current directory:" `pwd`
         ... echo "####################################################"
