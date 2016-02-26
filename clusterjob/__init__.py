@@ -889,6 +889,11 @@ class AsyncResult(object):
 
     debug_cmds = False
     _run_cmd = staticmethod(run_cmd)
+    # setting the sleep_interval < 1 can have some very problematic
+    # consquences, so we build in a safety net.
+    _min_sleep_interval = 1
+    # For testing, we can still get around this under the assumption that we
+    # know exactly what we're doing!
 
     def __init__(self, backend):
         self.remote = None
@@ -966,7 +971,7 @@ class AsyncResult(object):
         """Wait until the result is available or until roughly timeout seconds
         pass."""
         spent_time = 0
-        sleep_seconds = int(self.sleep_interval)
+        sleep_seconds = max(self._min_sleep_interval, int(self.sleep_interval))
         while self.status < COMPLETED:
             time.sleep(sleep_seconds)
             spent_time += sleep_seconds
