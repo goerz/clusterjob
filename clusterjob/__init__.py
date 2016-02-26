@@ -374,9 +374,9 @@ class JobScript(object):
 
     def __init__(self, body, jobname, aux_scripts=None, **kwargs):
         self.resources = self.__class__.resources.copy()
-        self.resources['jobname'] = jobname
+        self.resources['jobname'] = str(jobname)
 
-        self.body = body
+        self.body = str(body)
 
         self.aux_scripts = {}
         if aux_scripts is not None:
@@ -417,6 +417,9 @@ class JobScript(object):
             if value.endswith('/'):
                 value = value[:-1] # strip trailing slash
         elif name in ['prologue', 'epilogue']:
+            if value is None:
+                raise ValueError('prologue and epilogue must be strings, '
+                                 'not None')
             value = dedent(value).strip()
         return value
 
