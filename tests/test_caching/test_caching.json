@@ -1,0 +1,380 @@
+[
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_caching.slr"
+      ],
+      "kcluster",
+      ".",
+      "."
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5464158\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464158"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464158"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464158"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464158"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "RUNNING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464158"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sacct",
+        "--format=state",
+        "-n",
+        "-j 5464158"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": " COMPLETED \n COMPLETED \n"
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_caching.slr"
+      ],
+      "kcluster",
+      ".",
+      "."
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5464159\n"
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_caching.slr"
+      ],
+      "kcluster",
+      ".",
+      "."
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5464160\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464159"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464160"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "scancel",
+        "5464160"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "./."
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sbatch",
+        "test_caching.slr"
+      ],
+      "kcluster",
+      ".",
+      "."
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Submitted batch job 5464161\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "PENDING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "RUNNING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "RUNNING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "RUNNING\n"
+  },
+  {
+    "args": [
+      [
+        "squeue",
+        "-h",
+        "-o %T",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "sacct",
+        "--format=state",
+        "-n",
+        "-j 5464161"
+      ],
+      "kcluster"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": " COMPLETED \n COMPLETED \n"
+  }
+]
