@@ -28,6 +28,8 @@ def test_cached_workflow(request, tmpdir, monkeypatch):
     # out the remaining lines in the setup section
     monkeypatch.setattr(AsyncResult, '_min_sleep_interval', 0)
     job.max_sleep_interval = 0
+    monkeypatch.setattr(JobScript, '_upload_file',
+                        staticmethod(lambda *args, **kwargs: None))
 
     print("*** First Submission (cached) ***")
     ar = job.submit(cache_id='test')
