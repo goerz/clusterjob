@@ -73,13 +73,15 @@ def _run_testing_workflow(job, prompt=True):
 @click.option('--body', help="File containing the body of the script to be "
     "used. If not given, a default script will be used , see "
     "--show-default-body.", type=click.Path(exists=True))
+@click.option('--jobname', metavar='JOBNAME', show_default=True,
+        default='test_clusterjob_workflow', help="Name of the job")
 @click.option('--backend_module', '-m', metavar='MOD', help="Module from "
     "which to load a custom backend")
 @click.option('--show-default-body', is_flag=True, help="Print the default "
               "script body and exit.", callback=_print_default_test_body,
               expose_value=False, is_eager=True)
 @click.argument('inifile', type=click.Path(exists=True))
-def test_backend(inifile, body, backend_module):
+def test_backend(inifile, body, backend_module, jobname):
     """Perform a workflow test for a backend/job configuration specified in
     INIFILE. Create a clusterjob.JobScript instance of a simple default script
     (or any other script specified via --body). Read settings from the INIFILE
@@ -164,7 +166,7 @@ def test_backend(inifile, body, backend_module):
     AsyncResult._run_cmd = staticmethod(JobScript._run_cmd)
 
     # configure job script
-    job = JobScript(body_str, jobname='test_clj')
+    job = JobScript(body_str, jobname=jobname)
     click.echo("\nConfiguring job from %s\n" % inifile)
     try:
         job.read_settings(inifile)
@@ -216,17 +218,19 @@ def test_backend(inifile, body, backend_module):
     click.clear()
     click.echo("\nThe interaction has been recorded in %s" % jsonfile)
     if job.remote is None:
-        click.echo(("\nIf you intend to add %s to the clusterjob test suite, "
-                    "you may have to take into acount that the tuest suite "
-                    "will set $HOME to '/home/clusterjob_test', instead "
-                    "of '%s'") % (jsonfile, os.environ['HOME']))
+        click.echo(
+            ("\nIf you intend to add %s to the clusterjob test suite, "
+                "you may have to take into acount that the tuest suite "
+                "will set $HOME to '/home/clusterjob_test', instead "
+                "of '%s'") % (jsonfile, os.environ['HOME']))
         if click.confirm("\nDo you want to edit %s now?" % jsonfile):
             click.edit(filename=jsonfile)
 
-    click.echo("\nYou can now add this test to the clusterjob test suite. "
-               "Please move the files %s to clusterjob/tests/test_workflow/, "
-               "and add %s to the INI_FILES list in "
-               "clusterjob/tests/test_workflow.py" % (str(files), inifile))
+    click.echo(
+        "\nYou can now add this test to the clusterjob test suite. "
+        "Please move the files %s to clusterjob/tests/test_workflow/, "
+        "and add %s to the INI_FILES list in "
+        "clusterjob/tests/test_workflow.py" % (str(files), inifile))
 
     if has_epilogue or has_prologue:
         click.echo("\nNOTE THAT IN THE TEST SUITE ANY EPILOGUE OR "
