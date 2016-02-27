@@ -18,6 +18,7 @@ Submodules
 
 .. toctree::
 
+   clusterjob.cli
    clusterjob.status
    clusterjob.utils
 

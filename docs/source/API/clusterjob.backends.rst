@@ -12,6 +12,7 @@ Submodules
 .. toctree::
 
    clusterjob.backends.lpbs
+   clusterjob.backends.lsf
    clusterjob.backends.pbs
    clusterjob.backends.sge
    clusterjob.backends.slurm

@@ -74,6 +74,7 @@ test34: .venv/py34/bin/py.test
 test: test27 test33 test34
 
 doc: .venv/py34/bin/py.test
+	@rm docs/source/API/clusterjob.*
 	$(MAKE) -C docs SPHINXBUILD=../.venv/py34/bin/sphinx-build SPHINXAPIDOC=../.venv/py34/bin/sphinx-apidoc html
 	@ln -s docs/build/html doc
 
