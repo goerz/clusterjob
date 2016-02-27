@@ -168,11 +168,8 @@ class JobScript(object):
             :class:`AsyncResult` object resulting from the job submission. The
             main purpose of the epilogue script is to move data from a remote
             cluster upon completion of the job.
-        sleep_interval (int or None): Value for the `sleep_interval` attribute
-            of the :class:`AsyncResult` instance that is created upon
-            submission. If None, the value for that attribute will be
-            automatically determined between 10 and 1800 seconds, depending on
-            the projected runtime of the job.
+        max_sleep_interval (int): Upper limit for the number of seconds to
+            sleep between polling the status of a submitted job.
         ssh (str): The executable to use for ssh. If not a full path, must be
             in the ``$PATH``.
         scp (str): The executable to use for scp. If not a full path, must be
@@ -319,7 +316,7 @@ class JobScript(object):
         'filename': None,
         'prologue': '',
         'epilogue': '',
-        'sleep_interval': None,
+        'max_sleep_interval': 900,
         'ssh': 'ssh',
         'scp': 'scp',
     }
@@ -537,7 +534,7 @@ class JobScript(object):
             # for values that are not strings, be must specify a reader
             'Attributes': defaultdict(lambda:config.get,
                 {'debug_cmds': config.getboolean,
-                 'sleep_interval': config.getint,
+                 'max_sleep_interval': config.getint,
                 }
             ),
             'Resources': defaultdict(lambda:config.get,
@@ -818,18 +815,15 @@ class JobScript(object):
             ar.resources = self.resources.copy()
             ar.cache_file = cache_file
             ar.backend = backend
-            if self.sleep_interval is not None:
-                ar.sleep_interval = self.sleep_interval
-            else:
-                try:
-                    ar.sleep_interval \
-                    = int(time_to_seconds(self.resources['time']) / 10)
-                    if ar.sleep_interval < 10:
-                        ar.sleep_interval = 10
-                    if ar.sleep_interval > 1800:
-                        ar.sleep_interval = 1800
-                except KeyError:
-                    ar.sleep_interval = 60
+            try:
+                ar.max_sleep_interval \
+                = int(time_to_seconds(self.resources['time']) / 10)
+                if ar.max_sleep_interval < 10:
+                    ar.max_sleep_interval = 10
+            except KeyError:
+                ar.max_sleep_interval = self.max_sleep_interval
+            if self.max_sleep_interval < ar.max_sleep_interval:
+                ar.max_sleep_interval = self.max_sleep_interval
             ar._status = status
             ar.job_id = job_id
             if self.epilogue is not None:
@@ -870,8 +864,9 @@ class AsyncResult(object):
         backend (dict): A reference to the backend options dictionary for the
             backend under which the job is running
 
-        sleep_interval (int): Number of seconds to sleep between polls to the
-            cluster scheduling systems when waiting for the Job to finish
+        max_sleep_interval (int): Upper limit for the number of seconds to
+            sleep between polls to the cluster scheduling systems when waiting
+            for the Job to finish
 
         job_id (str): The Job ID assigned by the cluster scheduler
 
@@ -901,7 +896,7 @@ class AsyncResult(object):
         self.resources = {}
         self.cache_file = None
         self.backend = backend
-        self.sleep_interval = 10
+        self.max_sleep_interval = 160
         self.job_id = ''
         self._status = CANCELLED
         self.epilogue = None
@@ -954,30 +949,35 @@ class AsyncResult(object):
         if cache_file is not None:
             self.cache_file = cache_file
             with open(cache_file, 'wb') as pickle_fh:
-                pickle.dump((self.remote, self.resources, self.sleep_interval,
-                             self.job_id, self._status, self.epilogue,
-                             self.ssh, self.scp),
+                pickle.dump((self.remote, self.resources,
+                             self.max_sleep_interval, self.job_id,
+                             self._status, self.epilogue, self.ssh, self.scp),
                             pickle_fh)
 
     def load(self, cache_file):
         """Read dump from file"""
         self.cache_file = cache_file
         with open(cache_file, 'rb') as pickle_fh:
-            self.remote, self.resources, self.sleep_interval, self.job_id, \
-            self._status, self.epilogue, self.ssh, self.scp \
+            self.remote, self.resources, self.max_sleep_interval, \
+            self.job_id, self._status, self.epilogue, self.ssh, self.scp \
             = pickle.load(pickle_fh)
 
 
     def wait(self, timeout=None):
         """Wait until the result is available or until roughly timeout seconds
         pass."""
-        spent_time = 0
-        sleep_seconds = max(self._min_sleep_interval, int(self.sleep_interval))
+        logger = logging.getLogger(__name__)
+        if int(self.max_sleep_interval) < int(self._min_sleep_interval):
+            self.max_sleep_interval = int(self._min_sleep_interval)
+        t0 = time.time()
+        sleep_seconds = min(5, self.max_sleep_interval)
         while self.status < COMPLETED:
+            logger.debug("sleep for %d seconds", sleep_seconds)
             time.sleep(sleep_seconds)
-            spent_time += sleep_seconds
+            if 2*sleep_seconds <= self.max_sleep_interval:
+                sleep_seconds *= 2
             if timeout is not None:
-                if spent_time > timeout:
+                if int(time.time() - t0) > int(timeout):
                     return
 
     def ready(self):

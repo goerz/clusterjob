@@ -65,7 +65,7 @@ def example_inidata():
     epilogue = rsync -av {remote}:{rootdir}/{workdir}/ {workdir}
     rootdir = ~/jobs/
     workdir = run001
-    sleep_interval = 60
+    max_sleep_interval = 60
     # the following is a new attribute
     text = Hello World
 
@@ -86,7 +86,7 @@ def example_inidata():
         'epilogue': "rsync -av {remote}:{rootdir}/{workdir}/ {workdir}",
         'rootdir': '~/jobs',
         'workdir': 'run001',
-        'sleep_interval': 60,
+        'max_sleep_interval': 60,
         'text': "Hello World"
     }
     expected_resources = {
@@ -115,7 +115,7 @@ def test_read_inifile(tmpdir):
     assert "must contain at least one of the sections" in str(exc_info.value)
 
     inidata = dedent(r'''
-    sleep_interval = 60
+    max_sleep_interval = 60
     ''')
     p.write(inidata)
     with pytest.raises(ConfigParserError) as exc_info:
@@ -124,11 +124,11 @@ def test_read_inifile(tmpdir):
 
     inidata = dedent(r'''
     [Attributes]
-    sleep_interval = 60
+    max_sleep_interval = 60
     ''')
     p.write(inidata)
     JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert attribs['sleep_interval'] == 60
+    assert attribs['max_sleep_interval'] == 60
 
     inidata = dedent(r'''
     [Resources]
@@ -136,7 +136,7 @@ def test_read_inifile(tmpdir):
     ''')
     p.write(inidata)
     JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert attribs['sleep_interval'] == 60
+    assert attribs['max_sleep_interval'] == 60
     assert resources['threads'] == 2
 
     inidata = dedent(r'''
@@ -148,7 +148,7 @@ def test_read_inifile(tmpdir):
     ''')
     p.write(inidata)
     JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert attribs['sleep_interval'] == 60
+    assert attribs['max_sleep_interval'] == 60
     assert attribs['shell'] == '/bin/bash'
     assert resources['threads'] == 2
     assert resources['nodes'] == 1
@@ -156,7 +156,7 @@ def test_read_inifile(tmpdir):
     # section headers are case sensitive, keys are not
     inidata = dedent(r'''
     [Attributes]
-    Sleep_interval = 120
+    Max_Sleep_Interval = 120
     Shell = /bin/bash
 
     [Resources]
@@ -164,7 +164,7 @@ def test_read_inifile(tmpdir):
     ''')
     p.write(inidata)
     JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert attribs['sleep_interval'] == 120
+    assert attribs['max_sleep_interval'] == 120
     assert attribs['shell'] == '/bin/bash'
     assert resources['threads'] == 2
     assert resources['nodes'] == 1
@@ -228,8 +228,8 @@ def test_read_defaults(caplog, tmpdir):
     assert get_attributes(jobscript) == ['aux_scripts', 'body', 'resources']
     assert get_attributes(jobscript.__class__) == ['backend', 'backends',
             'cache_folder', 'cache_prefix', 'debug_cmds', 'epilogue',
-            'filename', 'prologue', 'remote', 'resources', 'rootdir', 'scp',
-            'shell', 'sleep_interval', 'ssh', 'workdir']
+            'filename', 'max_sleep_interval', 'prologue', 'remote',
+            'resources', 'rootdir', 'scp', 'shell', 'ssh', 'workdir']
     for attr in get_attributes(jobscript.__class__):
         if attr not in ['resources', 'backends']:
             assert getattr(jobscript, attr) == default_class_attr_val(attr)
@@ -306,8 +306,8 @@ def test_read_settings(caplog, tmpdir):
     p.write(inidata)
     jobscript.read_settings(ini_filename)
     assert get_attributes(jobscript) == ['aux_scripts', 'backend', 'body',
-            'epilogue', 'prologue', 'remote', 'resources', 'rootdir', 'shell',
-            'sleep_interval', 'text', 'workdir']
+            'epilogue', 'max_sleep_interval', 'prologue', 'remote',
+            'resources', 'rootdir', 'shell', 'text', 'workdir']
     # class attributes remain unaffected
     for attr in get_attributes(JobScript):
         if attr not in ['resources', 'backends']:

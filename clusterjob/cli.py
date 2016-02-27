@@ -41,10 +41,6 @@ def _run_testing_workflow(job, prompt=True):
     """
     click.echo("\n*** Submitting Job ***\n")
     ar = job.submit()
-    if prompt is False:
-        ar.sleep_interval = 0
-        # this relies on test_workflow monkeypatching the _min_sleep_interval
-        # to 0
     if prompt:
         click.pause("\nPlease verify that job has been submitted. "
                     "Press Enter to continue")
@@ -57,6 +53,10 @@ def _run_testing_workflow(job, prompt=True):
 
     click.echo("\n*** Resubmitting Job ***\n")
     ar = job.submit(retry=True)
+    if not prompt:
+        ar.max_sleep_interval = 0
+        # this relies on test_workflow monkeypatching the _min_sleep_interval
+        # to 0
     if prompt:
         click.pause("\nPlease verify that job has been resubmitted. "
                     "Press Enter to continue")
