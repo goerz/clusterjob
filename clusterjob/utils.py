@@ -181,6 +181,7 @@ def _wrap_run_cmd(jsonfile, mode='replay'):
     """Wrapper around :func:`run_cmd` for the testing using a record-replay
     model
     """
+    logger = logging.getLogger(__name__)
     records = []
     counter = 0
     json_opts = {'indent': 2, 'separators':(',',': '), 'sort_keys': True}
@@ -192,13 +193,23 @@ def _wrap_run_cmd(jsonfile, mode='replay'):
         return response
     def run_cmd_replay(*args, **kwargs):
         record = records.pop(0)
+        logger.debug("cached run_cmd, args=%s, kwargs=%s"
+                     % (str(args), str(kwargs)) )
         assert list(record['args']) == list(args), \
             "run_cmd call #%d: Obtained args: '%s'; Expected args: '%s'" \
             % (counter+1, str(args), str(record['args']))
         assert record['kwargs'] == kwargs, \
             "run_cmd call #%d: Obtained kwargs: '%s'; Expected kwargs: '%s'" \
             % (counter+1, str(kwargs), str(record['kwargs']))
-        return record['response']
+        response = record['response']
+        if "\n" in response:
+            if len(response.splitlines()) == 1:
+                logger.debug("cached response: %s", response)
+            else:
+                logger.debug("cached response: ---\n%s\n---", response)
+        else:
+            logger.debug("cached response: '%s'", response)
+        return response
     if mode == 'replay':
         with open(jsonfile) as in_fh:
             records = json.load(in_fh)
