@@ -361,6 +361,7 @@ class JobScript(object):
             inst = cls(body='', jobname='xxx')
             if check_backend(backend, inst):
                 cls._backends[backend['name']] = backend
+                logger.debug("Registered backend '%s'" % backend['name'])
         except AssertionError as e:
             pp = pprint.PrettyPrinter(indent=4)
             logger.error("Invalid backend:\n%s\n\n%s", pp.pformat(backend), e)

@@ -17,11 +17,15 @@ setup(name='clusterjob',
       author_email='goerz@stanford.edu',
       url='https://github.com/goerz/clusterjob',
       license='GPL',
+      install_requires=['click',],
       extras_require={'dev': ['pytest', 'pytest-capturelog', 'sphinx',
                               'sphinx-autobuild', 'sphinx_rtd_theme',
                               'coverage', 'pytest-cov'] + mock_package},
       packages=['clusterjob', 'clusterjob.backends'],
-      scripts=[],
+      entry_points='''
+          [console_scripts]
+          clusterjob-test-backend=clusterjob.cli:test_backend
+      ''',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',
