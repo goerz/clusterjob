@@ -34,6 +34,16 @@ def _print_default_test_body(ctx, param, value):
     ctx.exit()
 
 
+def _abort_pause(msg):
+    try:
+        msg += " Press ENTER to continue, CTRL+C to abort."
+        click.confirm(msg, abort=True, show_default=False,
+                        default=True, prompt_suffix='')
+    except click.Abort:
+        click.echo("")
+        sys.exit(0)
+
+
 def _run_testing_workflow(job, prompt=True):
     """For the given job, interactively go through the workflow of submitting,
     canceling, resubmitting, and polling the job (while it runs and after it
@@ -42,14 +52,12 @@ def _run_testing_workflow(job, prompt=True):
     click.echo("\n*** Submitting Job ***\n")
     ar = job.submit()
     if prompt:
-        click.pause("\nPlease verify that job has been submitted. "
-                    "Press Enter to continue")
+        _abort_pause("\nPlease verify that job has been submitted.")
 
     click.echo("\n*** Cancelling Job ***\n")
     ar.cancel()
     if prompt:
-        click.pause("\nPlease verify that job has been cancelled. "
-                    "Press Enter to continue")
+        _abort_pause("\nPlease verify that job has been cancelled.")
 
     click.echo("\n*** Resubmitting Job ***\n")
     ar = job.submit(retry=True)
@@ -58,12 +66,10 @@ def _run_testing_workflow(job, prompt=True):
         # this relies on test_workflow monkeypatching the _min_sleep_interval
         # to 0
     if prompt:
-        click.pause("\nPlease verify that job has been resubmitted. "
-                    "Press Enter to continue")
+        _abort_pause("\nPlease verify that job has been resubmitted.")
     click.echo("\nStatus of running job: "+str_status[ar.status])
     if prompt:
-        click.pause("\nPlease wait for job to finish. "
-                    "Press Enter to continue")
+        _abort_pause("\nPlease wait for job to finish.")
     click.echo("\nStatus of finished job: "+str_status[ar.get()])
 
 
@@ -74,7 +80,7 @@ def _run_testing_workflow(job, prompt=True):
     "used. If not given, a default script will be used , see "
     "--show-default-body.", type=click.Path(exists=True))
 @click.option('--jobname', metavar='JOBNAME', show_default=True,
-        default='test_clusterjob_workflow', help="Name of the job")
+        default='test_clj', help="Name of the job")
 @click.option('--backend_module', '-m', metavar='MOD', help="Module from "
     "which to load a custom backend")
 @click.option('--show-default-body', is_flag=True, help="Print the default "
@@ -155,8 +161,7 @@ def test_backend(inifile, body, backend_module, jobname):
         click.echo("------------------------&<-------------------------------")
         body_str = DEFAULT_TEST_BODY
     if body != bodyfile:
-        click.pause("\nBody will be written to %s. Press ENTER to confirm."
-                    % bodyfile)
+        _abort_pause("\nBody will be written to %s." % bodyfile)
         with open(bodyfile, 'w') as out_fh:
             out_fh.write(body_str)
         click.clear()
@@ -181,7 +186,7 @@ def test_backend(inifile, body, backend_module, jobname):
     epilogue = ''
     has_epilogue = False
     if len(job.epilogue) > 0:
-        has_apilogue = True
+        has_epilogue = True
         epilogue = job.epilogue + "\n"
     if job.remote is None:
         local_out = '{rootdir}/{workdir}/' + stdout
@@ -203,12 +208,12 @@ def test_backend(inifile, body, backend_module, jobname):
     else:
         click.pause("\nPress ENTER to view rendered job script.")
         click.echo_via_pager(str(job))
-    click.pause(("\nRendered job script will be written to %s. Press ENTER "
-                 "to confirm.") % renderedfile)
+    _abort_pause("\nRendered job script will be written to %s." % renderedfile)
     with open(renderedfile, 'w') as out_fh:
         out_fh.write(str(job))
     click.clear()
 
+    _abort_pause("\nReady to run live workflow.")
     _run_testing_workflow(job, prompt=True)
 
     click.pause(("\nThe job output has been recorded in %s. Press ENTER to "
