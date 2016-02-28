@@ -153,7 +153,7 @@ def test_read_inifile(tmpdir):
     assert resources['threads'] == 2
     assert resources['nodes'] == 1
 
-    # section headers are case sensitive, keys are not
+    # both section headers and keys are case sensitive
     inidata = dedent(r'''
     [Attributes]
     Max_Sleep_Interval = 120
@@ -164,10 +164,8 @@ def test_read_inifile(tmpdir):
     ''')
     p.write(inidata)
     JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert attribs['max_sleep_interval'] == 120
-    assert attribs['shell'] == '/bin/bash'
-    assert resources['threads'] == 2
-    assert resources['nodes'] == 1
+    assert attribs['max_sleep_interval'] == 60
+    assert attribs['Max_Sleep_Interval'] == '120' # no conversion to int!
 
     inidata = dedent(r'''
     [Attributes]
@@ -183,24 +181,6 @@ def test_read_inifile(tmpdir):
     with pytest.raises(ConfigParserError) as exc_info:
         JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
     assert "Invalid section 'Schedulers'" in str(exc_info.value)
-
-    inidata = dedent(r'''
-    [Attributes]
-    _interval = 120
-    ''')
-    p.write(inidata)
-    with pytest.raises(ConfigParserError) as exc_info:
-        JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert "Key '_interval' is invalid" in str(exc_info.value)
-
-    inidata = dedent(r'''
-    [Attributes]
-    attribute with spaces = test
-    ''')
-    p.write(inidata)
-    with pytest.raises(ConfigParserError) as exc_info:
-        JobScript._read_inifile(ini_filename, attr_setter, rsrc_setter)
-    assert "Key 'attribute with spaces' is invalid" in str(exc_info.value)
 
     inidata = dedent(r'''
     [Attributes]
@@ -327,4 +307,34 @@ def test_read_settings(caplog, tmpdir):
     #SBATCH --job-name=test2
     echo 'Hello'
     ''').strip()
+
+
+def test_read_invalid_attribute(caplog, tmpdir):
+    JobScript.read_defaults() # reset
+    caplog.setLevel(logging.DEBUG, logger='clusterjob')
+    jobscript = JobScript(body="echo '{text}'", jobname="test")
+
+    inidata = dedent(r'''
+    [Attributes]
+    _remote = login.cluster.edu
+    ''')
+    p = tmpdir.join("job.ini")
+    p.write(inidata)
+    ini_filename = str(p)
+
+    with pytest.raises(ConfigParserError) as exc_info:
+        jobscript.read_settings(ini_filename)
+    assert "Key '_remote' is invalid" in str(exc_info.value)
+
+    inidata = dedent(r'''
+    [Attributes]
+    key with spaces = bla
+    ''')
+    p = tmpdir.join("job.ini")
+    p.write(inidata)
+    ini_filename = str(p)
+
+    with pytest.raises(ConfigParserError) as exc_info:
+        jobscript.read_settings(ini_filename)
+    assert "Key 'key with spaces' is invalid" in str(exc_info.value)
 

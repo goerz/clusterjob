@@ -19,11 +19,12 @@ try:
 except ImportError:
     import pickle
 try:
-    from ConfigParser import ConfigParser
+    # Python 2
+    from ConfigParser import SafeConfigParser
     from ConfigParser import Error as ConfigParserError
 except ImportError:
     # Python 3
-    from configparser import ConfigParser
+    from configparser import ConfigParser as SafeConfigParser
     from configparser import Error as ConfigParserError
 import subprocess as sp
 from glob import glob
@@ -427,16 +428,17 @@ class JobScript(object):
 
         The file must be in the format specified in
         https://docs.python.org/3.5/library/configparser.html#supported-ini-file-structure
-        with the default ConfigParser settings. It must contain exactly one or
-        both of the sections "Attributes" and "Resources" (case sensitive). The
-        key-value pairs in the Attributes sections are set as class attributes,
-        whereas the key-value pairs in the "Resources" section are set as keys
-        and values in the `resources` class attribute.
+        with the default ConfigParser settings, except that all keys are case
+        sensitive. It must contain exactly one or both of the sections
+        "Attributes" and "Resources". The key-value pairs in the Attributes
+        sections are set as class attributes, whereas the key-value pairs in
+        the "Resources" section are set as keys and values in the `resources`
+        class attribute.
 
-        All keys must be start with a letter, and must consist only of letters,
-        numbers, and underscores. Keys are case-insensitive, and are converted
-        to lower case. The key names 'resources' and 'backends' may not be
-        used. An example for a valid config file is::
+        All keys in the "Attributes" section must be start with a letter, and
+        must consist only of letters, numbers, and underscores. Keys in the
+        "Resources" section can be arbitrary string. The key names 'resources'
+        and 'backends' may not be used. An example for a valid config file is::
 
             [Attributes]
             remote = login.cluster.edu
@@ -460,6 +462,10 @@ class JobScript(object):
         """
         logger = logging.getLogger(__name__)
         def attr_setter(key, val):
+            if not re.match(r'^[a-zA-Z]\w*$', key):
+                raise ConfigParserError(("Key '%s' is invalid. Keys "
+                "must be valid attribute names, i.e., they must match "
+                "the regular expression '^[a-zA-Z]\w*$'") % key)
             val = cls._sanitize_attr(key, val)
             logger.debug("Set class attribute %s = %s",  key, val)
             setattr(cls, key, val)
@@ -513,6 +519,10 @@ class JobScript(object):
         """
         logger = logging.getLogger(__name__)
         def attr_setter(key, val):
+            if not re.match(r'^[a-zA-Z]\w*$', key):
+                raise ConfigParserError(("Key '%s' is invalid. Keys "
+                "must be valid attribute names, i.e., they must match "
+                "the regular expression '^[a-zA-Z]\w*$'") % key)
             logger.debug("Set instance attribute %s = %s",  key, val)
             self.__setattr__(key, val)
         def rsrc_setter(key, val):
@@ -523,7 +533,8 @@ class JobScript(object):
     @staticmethod
     def _read_inifile(filename, attr_setter, rsrc_setter):
         logger = logging.getLogger(__name__)
-        config = ConfigParser()
+        config = SafeConfigParser()
+        config.optionxform=str
         with open(filename) as in_fh:
             config.readfp(in_fh)
         setters = { # section name => where to store keys/values
@@ -556,10 +567,6 @@ class JobScript(object):
                 "Allowed sections are %s" % (section, filename,
                 allowed_sections))
             for key, __ in config.items(section=section):
-                if not re.match(r'^[a-zA-Z]\w*$', key):
-                    raise ConfigParserError(("Key '%s' is invalid. Keys "
-                    "must be valid attribute names, i.e., they must match "
-                    "the regular expression '^[a-zA-Z]\w*$'") % key)
                 if key in illegal_keys:
                     raise ConfigParserError("Keys %s are not allowed"
                                             % str(illegal_keys))
