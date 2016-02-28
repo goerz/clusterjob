@@ -71,13 +71,18 @@ def get_job_status(response):
     command"""
     pbs_status_mapping = {
             'C' : COMPLETED,
+            'B' : RUNNING,
             'E' : RUNNING,
             'H' : PENDING,
+            'M' : PENDING,
             'Q' : PENDING,
             'R' : RUNNING,
             'T' : PENDING,
             'W' : PENDING,
+            'U' : PENDING,
             'S' : PENDING,
+            'F' : COMPLETED,
+            'X' : COMPLETED,
     }
     lines = [line.strip() for line in response.split("\n")
              if line.strip() != '']
@@ -88,7 +93,7 @@ def get_job_status(response):
         try:
             status = lines[-1].split()[4]
             return pbs_status_mapping[status]
-        except IndexError:
+        except (IndexError, KeyError):
             return None
 
 
@@ -98,9 +103,9 @@ backend = {
     'extension' : 'pbs',
     'cmd_submit'         : (lambda jobscript: ['qsub', jobscript.filename],
                             get_job_id),
-    'cmd_status_running' : (lambda job_id: ['qstat', str(job_id)],
+    'cmd_status_running' : (lambda job_id: ['qstat', '-x', str(job_id)],
                             get_job_status),
-    'cmd_status_finished': (lambda job_id: ['qstat', str(job_id)],
+    'cmd_status_finished': (lambda job_id: ['qstat', '-x', str(job_id)],
                             get_job_status),
     'cmd_cancel'         : lambda job_id: ['qdel', str(job_id) ],
     'translate_resources': translate_resources,
