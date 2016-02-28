@@ -1,0 +1,44 @@
+####################################################
+Job id         : 436042.sdb
+Job name       : test_clj
+Workdir        : /work/goerz/cjtest
+Submission Host: copper02
+Compute Node   : nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+Job started on copper07 Sun Feb 28 16:24:31 CST 2016
+Current directory: /lustre/usr/local/u/goerz
+####################################################
+Computer node:
+nid00916
+Application 2665968 resources: utime ~0s, stime ~1s, Rss ~4032, inblocks ~24, outblocks ~28
+Job Finished:  Sun Feb 28 16:25:32 CST 2016

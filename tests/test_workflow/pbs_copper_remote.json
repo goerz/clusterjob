@@ -1,0 +1,183 @@
+[
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/work/goerz/cjtest"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\n"
+  },
+  {
+    "args": [
+      [
+        "qsub",
+        "test_clj.pbs"
+      ],
+      "copper",
+      "/work/goerz",
+      "cjtest"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\n436041.sdb\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436041"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436041.sdb        test_clj         goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qdel",
+        "436041"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\n"
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/work/goerz/cjtest"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\n"
+  },
+  {
+    "args": [
+      [
+        "qsub",
+        "test_clj.pbs"
+      ],
+      "copper",
+      "/work/goerz",
+      "cjtest"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\n436042.sdb\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436042"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436042.sdb        test_clj         goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436042"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436042.sdb        test_clj         goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436042"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436042.sdb        test_clj         goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436042"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436042.sdb        test_clj         goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436042"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436042.sdb        test_clj         goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436042"
+      ],
+      "copper"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "/usr/local/ossh/bin/ssh"
+    },
+    "response": "\n\nJob id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436042.sdb        test_clj         goerz             00:00:01 F debug           \n"
+  }
+]

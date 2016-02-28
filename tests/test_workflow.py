@@ -15,7 +15,7 @@ except NameError:
 ###############################################################################
 
 INI_FILES = ['slurm_ks.ini', 'slurm_local.ini', 'lsf_ds.ini',
-             'pbs_copper_local.ini']
+             'pbs_copper_local.ini', 'pbs_copper_remote.ini']
 
 # default job name is 'test_clj'. Any other job name must be specified here
 JOB_NAMES = {'pbs_copper_local.ini': 'coppertest'}
