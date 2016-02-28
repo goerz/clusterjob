@@ -1,0 +1,198 @@
+[
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/work/goerz/cjtest"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "qsub",
+        "coppertest.pbs"
+      ],
+      null,
+      "/work/goerz",
+      "cjtest"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "436036.sdb\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436036"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436036.sdb        coppertest       goerz             00:00:00 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qdel",
+        "436036"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/work/goerz/cjtest"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "qsub",
+        "coppertest.pbs"
+      ],
+      null,
+      "/work/goerz",
+      "cjtest"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "436037.sdb\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 R debug           \n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-x",
+        "436037"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Job id            Name             User              Time Use S Queue\n----------------  ---------------- ----------------  -------- - -----\n436037.sdb        coppertest       goerz             00:00:01 F debug           \n"
+  }
+]

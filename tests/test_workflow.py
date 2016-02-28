@@ -3,9 +3,8 @@ import os
 import logging
 from clusterjob import JobScript, AsyncResult
 from clusterjob.utils import _wrap_run_cmd
-from clusterjob.cli import DEFAULT_TEST_BODY, _run_testing_workflow
+from clusterjob.cli import _run_testing_workflow
 import pytest
-from textwrap import dedent
 try:
     # Python 2 compatiblity
     input = raw_input
@@ -15,7 +14,11 @@ except NameError:
 
 ###############################################################################
 
-INI_FILES = ['slurm_ks.ini', 'slurm_local.ini', 'lsf_ds.ini']
+INI_FILES = ['slurm_ks.ini', 'slurm_local.ini', 'lsf_ds.ini',
+             'pbs_copper_local.ini']
+
+# default job name is 'test_clj'. Any other job name must be specified here
+JOB_NAMES = {'pbs_copper_local.ini': 'coppertest'}
 
 ###############################################################################
 
@@ -83,7 +86,12 @@ def test_workflow(workflow_files, monkeypatch):
     # configure job script
     with open(bodyfile) as in_fh:
         body = in_fh.read()
-    job = JobScript(body, jobname='test_clj')
+    jobname = 'test_clj'
+    for key in JOB_NAMES:
+        if ini_file.endswith(key):
+            jobname = JOB_NAMES[key]
+            break
+    job = JobScript(body, jobname=jobname)
     job.read_settings(ini_file)
     stdout = 'clusterjob_test.out'
     job.resources['stdout'] = stdout

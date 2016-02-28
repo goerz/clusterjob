@@ -1,0 +1,44 @@
+####################################################
+Job id         : 436037.sdb
+Job name       : coppertest
+Workdir        : /lustre/work/goerz/cjtest
+Submission Host: copper01
+Compute Node   : nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+nid00030
+Job started on copper07 Sun Feb 28 15:55:48 CST 2016
+Current directory: /lustre/usr/local/u/goerz
+####################################################
+Computer node:
+nid00007
+Application 2665956 resources: utime ~0s, stime ~1s, Rss ~3980, inblocks ~24, outblocks ~28
+Job Finished:  Sun Feb 28 15:56:49 CST 2016
