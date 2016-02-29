@@ -61,7 +61,7 @@ class SgeBackend(ClusterjobBackend):
             '$CLUSTERJOB_ID'         : '$JOB_ID',
             '$CLUSTERJOB_WORKDIR'    : '$SGE_O_WORKDIR',
             '$CLUSTERJOB_SUBMIT_HOST': '$SGE_O_HOST',
-            '$CLUSTERJOB_NAME'       : '$JOBNAME',
+            '$CLUSTERJOB_NAME'       : '$JOB_NAME',
             '$CLUSTERJOB_ARRAY_INDEX': '$SGE_TASK_ID',
             '$CLUSTERJOB_NODELIST'   : '$HOSTNAME',
             '${CLUSTERJOB_ID}'         : '${JOB_ID}',
@@ -97,7 +97,7 @@ class SgeBackend(ClusterjobBackend):
         same command is used for running and finished jobs."""
         # Sadly, qstat -j doesn't give the state, and just 'qstat' doesn't
         # allow to filter for a specific job id
-        return ['qstat', '-j %s' % str(run.job_id)]
+        return ['qstat', '-j', str(run.job_id)]
 
     def get_status(self, response, finished=False):
         """Given the stdout from the command returned by :meth:`cmd_status`,
@@ -121,19 +121,16 @@ class SgeBackend(ClusterjobBackend):
         lines that encode the resource requirements, to be added at the top of
         the rendered job script
         """
-        resources = jobscript.resources.copy()
         lines = []
-        if 'nodes' in resources:
-            del resources['nodes']
-        if 'threads' in resources:
-            del resources['threads']
-        for (key, val) in resources.items():
+        for (key, val) in jobscript.resources.items():
             if key in self.resource_replacements:
                 pbs_key = self.resource_replacements[key]
                 if key == 'mem':
                     val = str(val) + "m"
             else:
                 pbs_key = key
+            if key in ['nodes', 'threads', '-cwd', 'cwd']:
+                continue
             if val is None:
                 continue
             if type(val) is bool:
@@ -148,6 +145,7 @@ class SgeBackend(ClusterjobBackend):
                     lines.append('%s %s%s' % (self.prefix, pbs_key, str(val)))
                 else:
                     lines.append('%s %s %s' % (self.prefix, pbs_key, str(val)))
+        lines.append("%s -cwd" % self.prefix)
         return lines
 
     def replace_body_vars(self, body):
