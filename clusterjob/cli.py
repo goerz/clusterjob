@@ -1,6 +1,6 @@
 """Command line utilities"""
 from __future__ import absolute_import
-from .utils import _wrap_run_cmd
+from .utils import _wrap_run_cmd, read_file, write_file
 from .status import str_status
 from . import JobScript, AsyncResult, __version__
 import importlib
@@ -152,8 +152,7 @@ def test_backend(inifile, body, backend_module, jobname):
     files = [inifile, jsonfile, outfile, bodyfile, renderedfile]
     if body is not None:
         click.echo("Reading body from %s" % body)
-        with open(body) as in_fh:
-            body_str = in_fh.read()
+        body_str = read_file(body)
     else:
         click.echo("Using default body:\n")
         click.echo("------------------------&<-------------------------------")
@@ -162,8 +161,7 @@ def test_backend(inifile, body, backend_module, jobname):
         body_str = DEFAULT_TEST_BODY
     if body != bodyfile:
         _abort_pause("\nBody will be written to %s." % bodyfile)
-        with open(bodyfile, 'w') as out_fh:
-            out_fh.write(body_str)
+        write_file(bodyfile, body_str)
         click.clear()
 
     JobScript.debug_cmds = True
@@ -209,8 +207,7 @@ def test_backend(inifile, body, backend_module, jobname):
         click.pause("\nPress ENTER to view rendered job script.")
         click.echo_via_pager(str(job))
     _abort_pause("\nRendered job script will be written to %s." % renderedfile)
-    with open(renderedfile, 'w') as out_fh:
-        out_fh.write(str(job))
+    write_file(renderedfile, str(job))
     click.clear()
 
     _abort_pause("\nReady to run live workflow.")
@@ -218,8 +215,7 @@ def test_backend(inifile, body, backend_module, jobname):
 
     click.pause(("\nThe job output has been recorded in %s. Press ENTER to "
                  "view file") % outfile)
-    with open(outfile) as in_fh:
-        click.echo_via_pager(in_fh.read())
+    click.echo_via_pager(read_file(outfile))
     click.clear()
     click.echo("\nThe interaction has been recorded in %s" % jsonfile)
     if job.remote is None:
