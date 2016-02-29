@@ -7,8 +7,8 @@ import six
 
 @six.add_metaclass(ABCMeta)
 class ClusterjobBackend(object):
-    """Base class for all clusterjob backends. All backends must inherit from
-    this and implement the interface specified below.
+    """Abstract base class for all clusterjob backends. All backends must
+    inherit from this and implement the interface specified below.
 
     Attributes:
         name (str): name of the backend
@@ -69,8 +69,9 @@ class ClusterjobBackend(object):
         the placeholders for environment variables with backend-specific
         realizations, and return the modified body
 
-        Specifically, the following *Core Environment Variables* should be
-        handled:
+        At a minimum the following environment variables should be handled:
+
+        .. rubric:: _`Core Environment Variables`
 
         .. glossary::
 
