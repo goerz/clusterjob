@@ -62,6 +62,10 @@ distclean: clean
 	@conda create -y -m -p .venv/py34 python=3.4 $(PACKAGES)
 	@.venv/py34/bin/pip install -e .[dev]
 
+.venv/py35/bin/py.test:
+	@conda create -y -m -p .venv/py35 python=3.5 $(PACKAGES)
+	@.venv/py35/bin/pip install -e .[dev]
+
 test27: .venv/py27/bin/py.test
 	$< -v $(TESTOPTIONS) $(TESTS)
 
@@ -71,16 +75,19 @@ test33: .venv/py33/bin/py.test
 test34: .venv/py34/bin/py.test
 	$< -v $(TESTOPTIONS) $(TESTS)
 
-test: test27 test33 test34
+test35: .venv/py35/bin/py.test
+	$< -v $(TESTOPTIONS) $(TESTS)
 
-doc: .venv/py34/bin/py.test
+test: test27 test33 test34 test35
+
+doc: .venv/py35/bin/py.test
 	@rm docs/source/API/clusterjob.*
-	$(MAKE) -C docs SPHINXBUILD=../.venv/py34/bin/sphinx-build SPHINXAPIDOC=../.venv/py34/bin/sphinx-apidoc html
+	$(MAKE) -C docs SPHINXBUILD=../.venv/py35/bin/sphinx-build SPHINXAPIDOC=../.venv/py35/bin/sphinx-apidoc html
 	@ln -s docs/build/html doc
 
-coverage: test34
+coverage: test35
 	@rm -rf htmlcov/index.html
-	.venv/py34/bin/coverage html
+	.venv/py35/bin/coverage html
 
 .PHONY: install develop uninstall upload test-upload test-install sdist clean \
-test test27 test33 test34 distclean help coverage
+test test27 test33 test34 test35 distclean help coverage
