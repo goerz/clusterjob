@@ -817,7 +817,6 @@ class JobScript(object):
                 status = FAILED
 
             ar.remote = self.remote
-            ar.resources = self.resources.copy()
             ar.cache_file = cache_file
             ar.backend = backend
             try:
@@ -859,10 +858,6 @@ class AsyncResult(object):
             Passwordless ssh must be set up to reach the remote. A value of
             None indicates that the job is running locally
 
-        resources (dict): copy of the `resources` attribute of the
-            :class:`JobScript()` instance that created the `AsyncResult`
-            object
-
         cache_file (str or None): The full path and name of the file to be used
             to cache the `AsyncResult` object. The cache file will be written
             automatically anytime a change in status is detected
@@ -899,7 +894,6 @@ class AsyncResult(object):
 
     def __init__(self, backend):
         self.remote = None
-        self.resources = {}
         self.cache_file = None
         self.backend = backend
         self.max_sleep_interval = 160
@@ -953,8 +947,7 @@ class AsyncResult(object):
         if cache_file is not None:
             self.cache_file = cache_file
             with open(cache_file, 'wb') as pickle_fh:
-                pickle.dump((self.remote, self.resources,
-                             self.max_sleep_interval, self.job_id,
+                pickle.dump((self.remote, self.max_sleep_interval, self.job_id,
                              self._status, self.epilogue, self.ssh, self.scp),
                             pickle_fh)
 
@@ -962,9 +955,8 @@ class AsyncResult(object):
         """Read dump from file"""
         self.cache_file = cache_file
         with open(cache_file, 'rb') as pickle_fh:
-            self.remote, self.resources, self.max_sleep_interval, \
-            self.job_id, self._status, self.epilogue, self.ssh, self.scp \
-            = pickle.load(pickle_fh)
+            self.remote, self.max_sleep_interval, self.job_id, self._status, \
+            self.epilogue, self.ssh, self.scp = pickle.load(pickle_fh)
 
 
     def wait(self, timeout=None):
