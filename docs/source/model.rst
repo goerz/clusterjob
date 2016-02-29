@@ -38,9 +38,8 @@ of various HPC scheduling systems.
         a *specific* scheduler. This includes information about which commands
         must be used to submit and manage job scripts, how resource
         requirements must be encoded, and what environment variables are
-        defined by the scheduler. See the
-        :ref:`structure of the backend dictionary <backend dictionary>`
-        for details.
+        defined by the scheduler. Backends are implemented as classes that
+        realize the structure defined by :class:`~clusterjob.backends.ClusterjobBackend`.
 
     Scheduler
 
@@ -63,9 +62,10 @@ of various HPC scheduling systems.
 
         A Run is the result of submitting a job script to a specific scheduler.
         In the clusterjob package, a run is represented by the
-        :class:`clusterjob.AsyncResult` class. This class provides a superset
-        of the interface in `multiprocessing.pool.AsyncResult`. It is also
-        deliberately similar to the `ipyparallel.client.asyncresult.AsyncResult` class.
-        The Run maintains all the required information to communicate with the
-        scheduler about the status of the job. It can be cached to hard disc.
+        :class:`~clusterjob.AsyncResult` class. This class provides a superset
+        of the interface in :class:`multiprocessing.pool.AsyncResult`. It is also
+        deliberately similar to the :class:`ipyparallel.AsyncResult<ipyparallel:AsyncResult>`
+        class. The Run maintains all the required information to communicate
+        with the scheduler about the status of the job. It can be cached to
+        disk.
 

@@ -36,13 +36,19 @@ import pprint
 import pkgutil
 import time
 
-import clusterjob.backends
+from .backends import ClusterjobBackend
+from .backends.lpbs import LPbsBackend
+from .backends.lsf import LsfBackend
+from .backends.pbs import PbsBackend
+from .backends.sge import SgeBackend
+from .backends.slurm import SlurmBackend
 from .status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
         str_status)
 from .utils import (set_executable, run_cmd, upload_file, mkdir,
         time_to_seconds)
-from .backends import check_backend
 
+_BACKENDS = [LPbsBackend(), LsfBackend(), PbsBackend(), SgeBackend(),
+             SlurmBackend()]
 
 def _init_with_read_defaults(cls):
     """Class decorator that calls the read_defaults class method in order to
@@ -51,12 +57,9 @@ def _init_with_read_defaults(cls):
     return cls
 
 def _init_default_backends(cls):
-    """Register all backends defined in `clusterjob.backends`"""
-    for __, module_name, __ \
-    in pkgutil.walk_packages(clusterjob.backends.__path__):
-        mod = importlib.import_module(
-                'clusterjob.backends.%s' % module_name)
-        cls.register_backend(mod.backend)
+    """Register all built-in backends"""
+    for backend in _BACKENDS:
+        cls.register_backend(backend)
     return cls
 
 
@@ -348,21 +351,23 @@ class JobScript(object):
     def register_backend(cls, backend):
         """Register a new backend.
 
-        The `backend` argument must be a dictionary that follows the
-        :ref:`structure <backend dictionary>` described in the
-        :mod:`clusterjob.backends` documentation. If the dictionary is
-        found to have the wrong structure, an `AssertionError`
-        will be raised.
+        Argument:
+            backend (clusterjob.backends.ClusterjobBackend): The backend to
+                register. After registration, the `backend` attribute of the
+                `ClusterJob` may then refer to the backend by name
+                (`backend.name`).
         """
         logger = logging.getLogger(__name__)
-        try:
-            inst = cls(body='', jobname='xxx')
-            if check_backend(backend, inst):
-                cls._backends[backend['name']] = backend
-                logger.debug("Registered backend '%s'" % backend['name'])
-        except AssertionError as e:
-            pp = pprint.PrettyPrinter(indent=4)
-            logger.error("Invalid backend:\n%s\n\n%s", pp.pformat(backend), e)
+        if not isinstance(backend, ClusterjobBackend):
+            raise TypeError("backend must be an instance of ClusterjobBackend")
+        # check backend interface
+        if backend.name != str(backend.name):
+            raise TypeError("backend must have name attribute of type str")
+        name = backend.name
+        if backend.extension != str(backend.extension):
+            raise TypeError("backend "+name+" must have extension attribute "
+                            "of type str")
+        cls._backends[backend.name] = backend
 
     @classmethod
     def clear_cache_folder(cls):
@@ -578,7 +583,7 @@ class JobScript(object):
             if 'jobname' in self.resources:
                 self.filename = "%s.%s" \
                                  % (self.resources['jobname'],
-                                    self._backends[self.backend]['extension'])
+                                    self._backends[self.backend].extension)
 
     def render_script(self, scriptbody, jobscript=False):
         """Render the body of a script. This brings both the main `body`, as
@@ -615,15 +620,9 @@ class JobScript(object):
         # add the resource headers
         backend = self._backends[self.backend]
         if jobscript:
-            opt_translator = backend['translate_resources']
-            opt_array = opt_translator(self.resources)
-            prefix = backend['prefix']
-            for option in opt_array:
-                rendered_lines.append("%s %s" % (prefix, option))
+            rendered_lines.extend(backend.resource_headers(self))
         # apply environment variable mappings
-        var_replacements = backend['job_vars']
-        for var in var_replacements:
-            scriptbody = scriptbody.replace(var, var_replacements[var])
+        scriptbody = backend.replace_body_vars(scriptbody)
         # apply attribute mappings
         mappings = dict(self.__class__.__dict__)
         mappings.update(self.__dict__)
@@ -793,7 +792,6 @@ class JobScript(object):
 
         if not submitted:
             self._run_prologue()
-            cmd_submit, id_reader = backend['cmd_submit']
             self.write()
             for filename in self.aux_scripts:
                 self._write_script(
@@ -803,11 +801,11 @@ class JobScript(object):
                     remote=self.remote)
             job_id = None
             try:
-                cmd = cmd_submit(self)
+                cmd = backend.cmd_submit(self)
                 response = self._run_cmd(cmd, self.remote, self.rootdir,
                                          self.workdir, ignore_exit_code=True,
                                          ssh=self.ssh)
-                job_id = id_reader(response)
+                job_id = backend.get_job_id(response)
                 if job_id is None:
                     logger.error("Failed to submit job")
                     status = FAILED
@@ -852,7 +850,8 @@ class AsyncResult(object):
 
     Arguments:
 
-        backend (dict): Value for the :attr:`backend` attribute
+        backend (clusterjob.backends.ClusterjobBackend): Value for the
+            :attr:`backend` attribute
 
     Attributes:
 
@@ -868,8 +867,8 @@ class AsyncResult(object):
             to cache the `AsyncResult` object. The cache file will be written
             automatically anytime a change in status is detected
 
-        backend (dict): A reference to the backend options dictionary for the
-            backend under which the job is running
+        backend (clusterjob.backends.ClusterjobBackend): A reference to the
+            backend instance under which the job is running
 
         max_sleep_interval (int): Upper limit for the number of seconds to
             sleep between polls to the cluster scheduling systems when waiting
@@ -919,17 +918,15 @@ class AsyncResult(object):
         if self._status >= COMPLETED:
             return self._status
         else:
-            cmd_status, status_reader = self.backend['cmd_status_running']
-            cmd = cmd_status(self.job_id)
+            cmd = self.backend.cmd_status(self, finished=False)
             response = self._run_cmd(cmd, self.remote, ignore_exit_code=True,
                                      ssh=self.ssh)
-            status = status_reader(response)
+            status = self.backend.get_status(response, finished=False)
             if status is None:
-                cmd_status, status_reader = self.backend['cmd_status_finished']
-                cmd = cmd_status(self.job_id)
+                cmd = self.backend.cmd_status(self, finished=True)
                 response = self._run_cmd(cmd, self.remote,
                                          ignore_exit_code=True, ssh=self.ssh)
-                status = status_reader(response)
+                status = self.backend.get_status(response, finished=True)
             prev_status = self._status
             self._status = status
             if not self._status in STATUS_CODES:
@@ -1004,8 +1001,7 @@ class AsyncResult(object):
         job is not running"""
         if self.status > COMPLETED:
             return
-        cmd_cancel = self.backend['cmd_cancel']
-        cmd = cmd_cancel(self.job_id)
+        cmd = self.backend.cmd_cancel(self)
         self._run_cmd(cmd, self.remote, ignore_exit_code=True, ssh=self.ssh)
         self._status = CANCELLED
         self.dump()
