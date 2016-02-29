@@ -351,7 +351,7 @@ class JobScript(object):
     def register_backend(cls, backend):
         """Register a new backend.
 
-        Argument:
+        Arguments:
             backend (clusterjob.backends.ClusterjobBackend): The backend to
                 register. After registration, the `backend` attribute of the
                 `ClusterJob` may then refer to the backend by name
