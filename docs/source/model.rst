@@ -64,7 +64,8 @@ of various HPC scheduling systems.
         In the clusterjob package, a run is represented by the
         :class:`~clusterjob.AsyncResult` class. This class provides a superset
         of the interface in :class:`multiprocessing.pool.AsyncResult`. It is also
-        deliberately similar to the :class:`ipyparallel.client.asyncresult.AsyncResult` class.
-        The Run maintains all the required information to communicate with the
-        scheduler about the status of the job. It can be cached to disk.
+        deliberately similar to the :class:`ipyparallel.AsyncResult<ipyparallel:AsyncResult>`
+        class. The Run maintains all the required information to communicate
+        with the scheduler about the status of the job. It can be cached to
+        disk.
 
