@@ -967,7 +967,9 @@ class AsyncResult(object):
             self.max_sleep_interval = int(self._min_sleep_interval)
         t0 = time.time()
         sleep_seconds = min(5, self.max_sleep_interval)
-        while self.status < COMPLETED:
+        status = self.status
+        prev_status = status
+        while status < COMPLETED:
             logger.debug("sleep for %d seconds", sleep_seconds)
             time.sleep(sleep_seconds)
             if 2*sleep_seconds <= self.max_sleep_interval:
@@ -975,6 +977,10 @@ class AsyncResult(object):
             if timeout is not None:
                 if int(time.time() - t0) > int(timeout):
                     return
+            status = self.status
+            if status != prev_status:
+                sleep_seconds = min(5, self.max_sleep_interval)
+                prev_status = status
 
     def ready(self):
         """Return whether the job has completed."""
