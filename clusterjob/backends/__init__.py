@@ -1,156 +1,105 @@
 """
-Collection of backends.
-
-Each submodule defines a `backend` dictionary with the backend options.
-This dictionary (and all user-defined backends that may be passed to the
-:meth:`clusterjob.JobScript.register_backend` class method) must
-have the structure defined below.
-
-.. rubric:: _`backend dictionary`
-
-Keys:
-
-    name (str): Name of the backend.
-
-    prefix (str): prefix to be added before each submission option, in the
-        header of the job script. E.g. ``#SBATCH`` for slurm and ``#PBS`` for
-        PBS/Torque.
-
-    extension (str): Default filename extension for job script files.
-
-    cmd_submit (tuple of (callable, callable)): The first element of the tuple
-        is a callable that receives an instance of
-        :class:`clusterjob.JobScript` and must return the command to be used
-        for submission, preferably as a command list, or alternatively as a
-        shell command string. It should not modify the `JobScript` instance in
-        any way.
-        The second element of the `cmd_submit` tuple is a callable that
-        must receive the shell output from the submission command as a string,
-        and must return the job ID that the cluster has assigned to the job, as
-        a string.
-
-    cmd_status_running (tuple of (callable, callable)): The first element of
-        the tuple is a callable that receives the job ID of a running job, and
-        must return the command to be used to check the status of the script
-        (as list or string, see 'cmd_submit')
-        The second element of the tuple is a callable that receives the shell
-        output from that command and returns one of the status codes defined in
-        the `clusterjob.status` module, or None if no status can be determined
-        from the output of the command.
-
-    cmd_status_finished (tuple of (callable, callable)): A fallback if
-        `cmd_status_running` is not able to determine a status, e.g. because
-        the command defined there does not return any output for jobs that have
-        finished.  It will only be called if the interpreted result of
-        `cmd_status_running` is None.
-
-    cmd_cancel (callable): Callable that receives the job ID of a running job,
-        and must return the command that can be used to cancel the job (as a
-        list or string).
-
-    translate_resources (callable): The callable receives a dictionary of
-        resource specifications (from :attr:`clusterjob.JobScript.resources`),
-        and must return an array of command line options for the backend's
-        submission script. These, together with the backend's prefix will be
-        written to the header of the job submission script.
-
-    job_vars (dict): Mapping of replacements that will be applied to the body
-        of the job script. The intention is to adjust the name of
-        environment variables to the backend, e.g. ``$SLURM_JOB_ID`` for
-        SLURM vs. ``$PBS_JOBID`` for PBS/Torque. It must define replacements
-        for at least the core environment variables listed below, e.g.
-        ``job_vars['$CLUSTERJOB_ID'] = '$SLURM_JOB_ID'``
-
-.. rubric:: _`Core Environment Variables`
-
-.. glossary::
-
-   ``$CLUSTERJOB_ID``
-       The job ID assigned by the scheduler after submission
-
-   ``$CLUSTERJOB_WORKDIR``
-       The directory on the cluster from which the job script was submitted.
-
-   ``$CLUSTERJOB_SUBMIT_HOST``
-        The hostname on which the job script was submitted
-
-   ``$CLUSTERJOB_NAME``
-        The name of the job
-
-   ``$CLUSTERJOB_NODELIST``
-        The hostname(s) on which the job script is running
+Package for default backends
 """
 from __future__ import absolute_import
+from abc import ABCMeta, abstractmethod
+import six
 
-from . import slurm
+@six.add_metaclass(ABCMeta)
+class ClusterjobBackend(object):
+    """Base class for all clusterjob backends. All backends must inherit from
+    this and implement the interface specified below.
 
-# every backend must know how to handle the following keys in the resources
-# dict
-COMMON_KEYS = ['name', 'queue', 'time', 'nodes', 'threads', 'mem', 'stdout',
-    'stderr']
-
-
-def check_backend(backend, jobscript, raise_exception=True):
-    """Return True if the given backend has the correct structure (as compared
-    agains the slurm backend)
-
-    Arguments:
-        backend (dict): Dictionary of backend options
-        jobscript (clusterjob.JobScript): a test instance
-        raise_exceptions (boolean, optional): If True (default), raise an
-            `AssertionError` if the backend does not match the required
-            structure.  Otherwise, return False.
+    Attributes:
+        name (str): name of the backend
+        extension (str): extension to be used for job scripts
     """
-    template = slurm.backend
-    try:
-        for key in template:
-            assert key in backend, "backend is missing mandatory key %s" % key
-        for key in backend:
-            assert key in template, "backend has an unexpected key %s" % key
-        test_options = {
-            'name': 'testjob',
-            'queue': 'testqueue',
-            'time': '01:00:00',
-            'nodes': 1,
-            'threads': 1,
-            'mem': 1024,
-            'stdout': 'stdout.log',
-            'stderr': 'stderr.log',
-        }
-        for key in COMMON_KEYS:
-            assert key in test_options
-        try:
-            opt_array = backend['translate_resources'](test_options)
-            for option in opt_array:
-                assert str(option) == option
-        except Exception as e:
-            raise AssertionError("invalid backend %s: %s", backend['name'], e)
-        try:
-            cmd1, cmd2 = backend['cmd_submit']
-            cmd1(jobscript)
-            cmd2('xxx')
-        except (TypeError, ValueError) as e:
-            raise AssertionError("cmd_submit must a tuple of callables: %s"
-                                    % (e, ))
-        for key in ['cmd_status_running', 'cmd_status_finished']:
-            try:
-                cmd1, cmd2 = backend[key]
-                cmd1('xxx')
-                cmd2('xxx')
-            except (TypeError, ValueError) as e:
-                raise AssertionError("%s must a tuple of callables: %s"
-                                     % (key, e))
-        try:
-            backend['cmd_cancel']('xxx')
-        except TypeError as e:
-            raise AssertionError("cmd_cancel must a callable: %s" % (e, ))
-        for key in template['job_vars']:
-            assert key in backend['job_vars'], \
-            "backend does not recognize job variable %s" % key
-    except AssertionError:
-        if raise_exception:
-            raise
-        else:
-            return False
-    return True
+    common_keys = ['name', 'queue', 'time', 'nodes', 'threads', 'mem',
+                   'stdout', 'stderr']
 
+    @abstractmethod
+    def cmd_submit(self, jobscript):
+        """Given a :class:`~clusterjob.JobScript` instance, return a command
+        that submits the job to the scheduler. The returned command must be
+        be a sequence of program arguments or a string, see `args` argument of
+        :class:`subprocess.Popen`.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_job_id(self, response):
+        """Given the stdout from the command returned by :meth:`cmd_submit`,
+        return a job ID as a str, or None if the job ID cannot be determined"""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def cmd_status(self, run, finished=False):
+        """Given a :class:`~clusterjob.AsyncResult` instance, return a command
+        (cf. :meth:`cmd_submit`) that queries the scheduler for the job status.
+        If ``finished=True``, the command should be appropriate for a run that
+        has already finished."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_status(self, respone, finished=False):
+        """Given the stdout from the command returned by :meth:`cmd_status`,
+        return one of the status code defined in :mod:`clusterjob.status`, or
+        None if  the status cannot be determined."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def cmd_cancel(self, run):
+        """Given a :class:`~clusterjob.AsyncResult` instance, return a command
+        (cf. :meth:`cmd_submit`) that cancels the run."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def resource_headers(self, jobscript):
+        """Given a :class:`~clusterjob.JobScript` instance, return a list of
+        lines (no trailing newlines) that encode the resource requirements, to
+        be added at the top of the rendered job script. At the very least, keys
+        in the `jobscript` resources dict that are in the list of
+        :attr:`common_keys` must be handled.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def replace_body_vars(self, body):
+        """Given a multiline string that is the body of the job script, replace
+        the placeholders for environment variables with backend-specific
+        realizations, and return the modified body
+
+        Specifically, the following *Core Environment Variables* should be
+        handled:
+
+        .. glossary::
+
+        ``$CLUSTERJOB_ID``
+            The job ID assigned by the scheduler after submission
+
+        ``$CLUSTERJOB_WORKDIR``
+            The directory on the cluster from which the job script was
+            submitted.
+
+        ``$CLUSTERJOB_SUBMIT_HOST``
+                The hostname on which the job script was submitted.
+
+        ``$CLUSTERJOB_NAME``
+                The name of the job.
+
+        ``$CLUSTERJOB_NODELIST``
+                The hostname(s) on which the job script is running.
+        """
+        raise NotImplementedError()
+
+#   def submission_scripts(self, jobscript):
+#       """Given a :class:`~clusterjob.JobScript` instance, return a dictionary
+#       of submission scripts. This is for situations where the backend
+#       requires a separate script for submission. Most backends will not need
+#       to implement this method. The result must be a dictionary that maps
+#       filenames to file contents (as multiline strings). Before submission,
+#       each file in the dictionary will be written to the same folder as the
+#       job script. The :meth:`cmd_submit` method is assumed to take into
+#       account the submission scripts
+#       """
+#       return {}

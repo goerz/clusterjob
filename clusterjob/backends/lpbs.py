@@ -2,36 +2,31 @@
 LPBS backend
 """
 from __future__ import absolute_import
+from .pbs import PbsBackend
 
-from . pbs import translate_resources, get_job_id, get_job_status
-from ..utils import pprint_backend
+class LPbsBackend(PbsBackend):
+    """LPBS Backend"""
 
-backend = {
-    'name': 'lpbs',
-    'prefix': '#PBS',
-    'extension' : 'pbs',
-    'cmd_submit'         : (lambda jobscript: ['lqsub', jobscript.filename],
-                            get_job_id),
-    'cmd_status_running' : (lambda job_id: ['lqstat', str(job_id)],
-                            get_job_status),
-    'cmd_status_finished': (lambda job_id: ['lqstat', str(job_id)],
-                            get_job_status),
-    'cmd_cancel'         : lambda job_id: ['lqdel', str(job_id) ],
-    'translate_resources': translate_resources,
-    'job_vars': {
-        '$CLUSTERJOB_ID'         : '$PBS_JOB_ID',
-        '$CLUSTERJOB_WORKDIR'    : '$PBS_O_WORKDIR',
-        '$CLUSTERJOB_SUBMIT_HOST': '$PBS_O_HOST',
-        '$CLUSTERJOB_NAME'       : '$PBS_JOBNAME',
-        '$CLUSTERJOB_ARRAY_INDEX': '$PBS_ARRAYID',
-        '$CLUSTERJOB_NODELIST'   : '`cat $PBS_NODEFILE`',
-        '${CLUSTERJOB_ID}'         : '${PBS_JOB_ID}',
-        '${CLUSTERJOB_WORKDIR}'    : '${PBS_O_WORKDIR}',
-        '${CLUSTERJOB_SUBMIT_HOST}': '${PBS_O_HOST}',
-        '${CLUSTERJOB_NAME}'       : '${PBS_JOBNAME}',
-        '${CLUSTERJOB_ARRAY_INDEX}': '${PBS_ARRAYID}',
-        '${CLUSTERJOB_NODELIST}'   : '`cat $PBS_NODEFILE`',
-    },
-}
+    def __init__(self):
+        PbsBackend.__init__(self)
+        self.name = 'lpbs'
+        self.extension = 'pbs'
+        self.prefix = '#PBS'
 
-__doc__ += "\n\n::\n\n" + pprint_backend(backend, indent=4)
+    def cmd_submit(self, jobscript):
+        """Given a :class:`~clusterjob.JobScript` instance, return a ``lqsub``
+        command that submits the job to the scheduler, as a list of program
+        arguments.
+        """
+        return ['lqsub', jobscript.filename]
+
+    def cmd_status(self, run, finished=False):
+        """Given a :class:`~clusterjob.AsyncResult` instance, return a
+        ``lqstat`` command that queries the scheduler for the job status."""
+        return ['lqstat', str(run.job_id)]
+
+    def cmd_cancel(self, run):
+        """Given a :class:`~clusterjob.AsyncResult` instance, return a
+        ``lqdel`` command that cancels the run, as a list of command arguments.
+        """
+        return ['lqdel', str(run.job_id)]

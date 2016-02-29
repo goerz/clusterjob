@@ -1,64 +1,30 @@
-"""
-SLURM backend
-"""
 from __future__ import absolute_import
+import re
 
 from ..status import PENDING, RUNNING, COMPLETED, CANCELLED, FAILED
-from ..utils import pprint_backend
-
-resource_replacements = {
-    'jobname': ('--job-name',      lambda s: str(s).strip() ),
-    'queue'  : ('--partition',     lambda s: str(s).strip() ),
-    'time'   : ('--time',          lambda s: str(s).strip() ),
-    'nodes'  : ('--nodes',         lambda s: str(s).strip() ),
-    'threads': ('--cpus-per-task', lambda s: str(s).strip() ),
-    'mem'    : ('--mem',           lambda s: str(s).strip() ),
-    'stdout' : ('--output',        lambda s: str(s).strip() ),
-    'stderr' : ('--error',         lambda s: str(s).strip() ),
-}
+from .. import ClusterjobBackend
 
 
-def translate_resources(resources_dict):
-    """Translate dictionary of resources into array of options for SLURM"""
-    opt_array = []
-    for (key, val) in resources_dict.items():
-        if key in resource_replacements:
-            slurm_key, converter = resource_replacements[key]
-            val = converter(val)
-        else:
-            slurm_key = key
-        if not slurm_key.startswith('-'):
-            if len(slurm_key) == 1:
-                slurm_key = '-%s' % slurm_key
-            else:
-                slurm_key = '--%s' % slurm_key
-        if val is None:
-            continue
-        if type(val) is bool:
-            if val:
-                opt_array.append(slurm_key)
-        else:
-            if slurm_key.startswith('--'):
-                opt_array.append('%s=%s' % (slurm_key, str(val)))
-            else:
-                opt_array.append('%s %s' % (slurm_key, str(val)))
-    return opt_array
+class SlurmBackend(ClusterjobBackend):
+    """SLURM Backend
 
+    Attributes:
+        name (str): Name of the backend
+        extension (str): Extension for job scripts
+        prefix(str): The prefix for every line in the resource header
+        status_mapping (dict): mapping of Slurm string status codes to
+            clusterjob integer status codes
+        resource_replacements (dict): mapping of the common clusterjob resource
+            keys to command line options of the `qsub` command.
+        job_vars(dict): mapping of *core environment variables* to
+            Slurm-specific environment variables.
 
-def get_job_id(response):
-    """Return the job id from the response of the sbatch command"""
-    import re
-    match = re.search('Submitted batch job (\d+)\s*$', response)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-
-def get_job_status(response):
-    """Return job job status code from the response of the sacct/squeue
-    command"""
-    slurm_status_mapping = {
+    """
+    def __init__(self):
+        self.name = 'slurm'
+        self.extension = 'slr'
+        self.prefix = '#SBATCH'
+        self.status_mapping = {
             'RUNNING'    : RUNNING,
             'CANCELLED'  : CANCELLED,
             'COMPLETED'  : COMPLETED,
@@ -70,40 +36,110 @@ def get_job_status(response):
             'PREEMPTED'  : FAILED,
             'SUSPENDED'  : PENDING,
             'TIMEOUT'    : FAILED,
-    }
-    for line in response.split("\n"):
-        if line.strip() in slurm_status_mapping:
-            return slurm_status_mapping[line.strip()]
-    return None
+        }
+        self.resource_replacements = {
+            'jobname': '--job-name',
+            'queue'  : '--partition',
+            'time'   : '--time',
+            'nodes'  : '--nodes',
+            'threads': '--cpus-per-task',
+            'mem'    : '--mem',
+            'stdout' : '--output',
+            'stderr' : '--error',
+        }
+        self.job_vars = {
+            '$CLUSTERJOB_ID'         : '$SLURM_JOB_ID',
+            '$CLUSTERJOB_WORKDIR'    : '$SLURM_SUBMIT_DIR',
+            '$CLUSTERJOB_SUBMIT_HOST': '$SLURM_SUBMIT_HOST',
+            '$CLUSTERJOB_NAME'       : '$SLURM_JOB_NAME',
+            '$CLUSTERJOB_ARRAY_INDEX': '$SLURM_ARRAY_TASK_ID',
+            '$CLUSTERJOB_NODELIST'   : '$SLURM_JOB_NODELIST',
+            '${CLUSTERJOB_ID}'         : '${SLURM_JOB_ID}',
+            '${CLUSTERJOB_WORKDIR}'    : '${SLURM_SUBMIT_DIR}',
+            '${CLUSTERJOB_SUBMIT_HOST}': '${SLURM_SUBMIT_HOST}',
+            '${CLUSTERJOB_NAME}'       : '${SLURM_JOB_NAME}',
+            '${CLUSTERJOB_ARRAY_INDEX}': '${SLURM_ARRAY_TASK_ID}',
+            '${CLUSTERJOB_NODELIST}'   : '${SLURM_JOB_NODELIST}',
+        }
+    def cmd_submit(self, jobscript):
+        """Given a :class:`~clusterjob.JobScript` instance, return a ``sbatch``
+        command that submits the job to the scheduler, as a list of program
+        arguments.
+        """
+        return ['sbatch', jobscript.filename]
 
-backend = {
-    'name': 'slurm',
-    'prefix': '#SBATCH',
-    'extension' : 'slr',
-    'cmd_submit'         : (lambda jobscript: ['sbatch', jobscript.filename],
-                            get_job_id),
-    'cmd_status_running' : (lambda job_id: \
-                            ['squeue', '-h', '-o %T', '-j %s' % job_id],
-                            get_job_status),
-    'cmd_status_finished': (lambda job_id: \
-                           ['sacct', '--format=state', '-n', '-j %s' % job_id],
-                            get_job_status),
-    'cmd_cancel'         : lambda job_id: ['scancel', str(job_id)],
-    'translate_resources': translate_resources,
-    'job_vars': {
-        '$CLUSTERJOB_ID'         : '$SLURM_JOB_ID',
-        '$CLUSTERJOB_WORKDIR'    : '$SLURM_SUBMIT_DIR',
-        '$CLUSTERJOB_SUBMIT_HOST': '$SLURM_SUBMIT_HOST',
-        '$CLUSTERJOB_NAME'       : '$SLURM_JOB_NAME',
-        '$CLUSTERJOB_ARRAY_INDEX': '$SLURM_ARRAY_TASK_ID',
-        '$CLUSTERJOB_NODELIST'   : '$SLURM_JOB_NODELIST',
-        '${CLUSTERJOB_ID}'         : '${SLURM_JOB_ID}',
-        '${CLUSTERJOB_WORKDIR}'    : '${SLURM_SUBMIT_DIR}',
-        '${CLUSTERJOB_SUBMIT_HOST}': '${SLURM_SUBMIT_HOST}',
-        '${CLUSTERJOB_NAME}'       : '${SLURM_JOB_NAME}',
-        '${CLUSTERJOB_ARRAY_INDEX}': '${SLURM_ARRAY_TASK_ID}',
-        '${CLUSTERJOB_NODELIST}'   : '${SLURM_JOB_NODELIST}',
-    },
-}
+    def get_job_id(self, response):
+        """Given the stdout from the command returned by :meth:`cmd_submit`,
+        return a job ID"""
+        match = re.search('Submitted batch job (\d+)\s*$', response)
+        if match:
+            return match.group(1)
+        else:
+            return None
 
-__doc__ += "\n\n::\n\n" + pprint_backend(backend, indent=4)
+    def cmd_status(self, run, finished=False):
+        """Given a :class:`~clusterjob.AsyncResult` instance, return a command
+        that queries the scheduler for the job status, as a list of command
+        arguments.  If ``finished=True``, the scheduler is queried via
+        ``sacct``. Otherwise, ``squeue`` is used.
+        """
+        if finished:
+            return ['sacct', '--format=state', '-n', '-j %s' % run.job_id]
+        else:
+            return ['squeue', '-h', '-o %T', '-j %s' % run.job_id]
+
+    def get_status(self, response, finished=False):
+        """Given the stdout from the command returned by :meth:`cmd_status`,
+        return one of the status code defined in :mod:`clusterjob.status`"""
+        for line in response.split("\n"):
+            if line.strip() in self.status_mapping:
+                return self.status_mapping[line.strip()]
+        return None
+
+    def cmd_cancel(self, run):
+        """Given a :class:`~clusterjob.AsyncResult` instance, return an
+        ``scancel`` command that cancels the run, as a list of command
+        arguments.
+        """
+        return ['scancel', str(run.job_id)]
+
+    def resource_headers(self, jobscript):
+        """Given a :class:`~clusterjob.JobScript` instance, return a list of
+        lines that encode the resource requirements, to be added at the top of
+        the rendered job script
+        """
+        lines = []
+        for (key, val) in jobscript.resources.items():
+            if key in self.resource_replacements:
+                slurm_key = self.resource_replacements[key]
+                val = str(val).strip()
+            else:
+                slurm_key = key
+            if not slurm_key.startswith('-'):
+                if len(slurm_key) == 1:
+                    slurm_key = '-%s' % slurm_key
+                else:
+                    slurm_key = '--%s' % slurm_key
+            if val is None:
+                continue
+            if type(val) is bool:
+                if val:
+                    lines.append("%s %s" % (self.prefix, slurm_key))
+            else:
+                if slurm_key.startswith('--'):
+                    lines.append('%s %s=%s'
+                                  % (self.prefix, slurm_key, str(val)))
+                else:
+                    lines.append('%s %s %s'
+                                 % (self.prefix, slurm_key, str(val)))
+        return lines
+
+    def replace_body_vars(self, body):
+        """Given a multiline string that is the body of the job script, replace
+        the placeholders for environment variables with backend-specific
+        realizations, and return the modified body
+        """
+        for key, val in self.job_vars.items():
+            body = body.replace(key, val)
+        return body
+
