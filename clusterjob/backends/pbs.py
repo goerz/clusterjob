@@ -21,10 +21,11 @@ class PbsBackend(ClusterjobBackend):
         job_vars (dict): mapping of *core environment variables* to
             PBS-specific environment variables.
     """
+    name = 'pbs'
+    extension = 'pbs'
+    prefix = '#PBS'
+
     def __init__(self):
-        self.name = 'pbs'
-        self.extension = 'pbs'
-        self.prefix = '#PBS'
         self.status_mapping = {
             'C' : COMPLETED,
             'B' : RUNNING,
@@ -63,6 +64,7 @@ class PbsBackend(ClusterjobBackend):
             '${CLUSTERJOB_ARRAY_INDEX}': '${PBS_ARRAYID}',
             '${CLUSTERJOB_NODELIST}'   : '`cat $PBS_NODEFILE`',
         }
+
     def cmd_submit(self, jobscript):
         """Given a :class:`~clusterjob.JobScript` instance, return a ``qsub``
         command that submits the job to the scheduler, as a list of program

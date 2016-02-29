@@ -43,10 +43,11 @@ class SgeBackend(ClusterjobBackend):
         shell as e.g. ``-S /bin/bash``. If this definition is missing, the run
         can crash with some very unclear error messages
     """
+    name = 'sge'
+    extension = 'sge'
+    prefix = '#$'
+
     def __init__(self):
-        self.name = 'sge'
-        self.extension = 'sge'
-        self.prefix = '#$'
         self.resource_replacements = {
             'jobname': '-N',
             'queue'  : '-q',

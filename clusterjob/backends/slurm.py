@@ -20,10 +20,11 @@ class SlurmBackend(ClusterjobBackend):
             Slurm-specific environment variables.
 
     """
+    name = 'slurm'
+    extension = 'slr'
+    prefix = '#SBATCH'
+
     def __init__(self):
-        self.name = 'slurm'
-        self.extension = 'slr'
-        self.prefix = '#SBATCH'
         self.status_mapping = {
             'RUNNING'    : RUNNING,
             'CANCELLED'  : CANCELLED,

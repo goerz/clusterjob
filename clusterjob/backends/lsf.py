@@ -23,12 +23,13 @@ class LsfBackend(ClusterjobBackend):
             keys to command line options of the `bsub` command.
         job_vars(dict): mapping of *core environment variables* to
             LSF-specific environment variables.
-
     """
+
+    name = 'lsf'
+    extension = 'lsf'
+    prefix = '#BSUB'
+
     def __init__(self):
-        self.name = 'lsf'
-        self.extension = 'lsf'
-        self.prefix = '#BSUB'
         self.status_mapping = {
             'PEND'  : PENDING,
             'PSUSP' : PENDING,

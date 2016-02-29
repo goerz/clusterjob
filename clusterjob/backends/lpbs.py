@@ -7,11 +7,9 @@ from .pbs import PbsBackend
 class LPbsBackend(PbsBackend):
     """LPBS Backend"""
 
-    def __init__(self):
-        PbsBackend.__init__(self)
-        self.name = 'lpbs'
-        self.extension = 'pbs'
-        self.prefix = '#PBS'
+    name = 'lpbs'
+    extension = 'pbs'
+    prefix = '#PBS'
 
     def cmd_submit(self, jobscript):
         """Given a :class:`~clusterjob.JobScript` instance, return a ``lqsub``
