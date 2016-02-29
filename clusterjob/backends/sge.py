@@ -19,29 +19,29 @@ class SgeBackend(ClusterjobBackend):
         job_vars(dict): mapping of *core environment variables* to PBS-specific
             environment variables.
 
-        Note:
-            Nodes and threads are not directly supported on SGE, but must be
-            set up using "parallel environments". The configuration is set by
-            the administrator so you have to check what they've called the
-            parallel environments
+    Note:
+        Nodes and threads are not directly supported on SGE, but must be set up
+        using "parallel environments". The configuration is set by the
+        administrator so you have to check what they've called the parallel
+        environments::
 
-                %> qconf -spl
-                pe1
-                omp
+            %> qconf -spl
+            pe1
+            omp
 
-            look for one with ``$pe_slots`` in the config
+        look for one with ``$pe_slots`` in the config::
 
-                %> qconf -sp pe1
-                %> qconf -sp omp
+            %> qconf -sp pe1
+            %> qconf -sp omp
 
-            Call ``qsub`` with that environment and number of cores you want to
-            use
+        Call ``qsub`` with that environment and number of cores you want to
+        use::
 
-                qsub -pe omp 8 -cwd ./myscript
+            qsub -pe omp 8 -cwd ./myscript
 
-            Depending on how the cluster is set up, it may be necessary to pass
-            the shell as e.g. ``-S /bin/bash``. If this definition is missing,
-            the run can crash with some very unclear error messages
+        Depending on how the cluster is set up, it may be necessary to pass the
+        shell as e.g. ``-S /bin/bash``. If this definition is missing, the run
+        can crash with some very unclear error messages
     """
     def __init__(self):
         self.name = 'sge'
