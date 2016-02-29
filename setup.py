@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 from distutils.core import setup
-from clusterjob import __version__
+
+
+def get_version(filename):
+    with open(filename) as in_fh:
+        for line in in_fh:
+            if line.startswith('__version__'):
+                return line.split('=')[1].strip()[1:-1]
+    raise ValueError("Cannot extract version from %s" % filename)
+
 
 try:
     # In Python >3.3, 'mock' is part of the standard library
@@ -11,7 +19,7 @@ except ImportError:
     mock_package = ['mock', ]
 
 setup(name='clusterjob',
-      version=__version__,
+      version=get_version('clusterjob/__init__.py'),
       description='Manage traditional HPC cluster workflows in Python',
       author='Michael Goerz',
       author_email='goerz@stanford.edu',
