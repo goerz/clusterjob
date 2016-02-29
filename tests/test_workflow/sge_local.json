@@ -1,0 +1,213 @@
+[
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/home/goerz/cjtest"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "qsub",
+        "test_clj.sge"
+      ],
+      null,
+      "/home/goerz",
+      "cjtest"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Your job 2417 (\"test_clj\") has been submitted\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2417"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2417\nexec_file:                  job_scripts/2417\nsubmission_time:            Mon Feb 29 13:40:02 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qdel",
+        "2417"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "goerz has deleted job 2417\n"
+  },
+  {
+    "args": [
+      [
+        "mkdir",
+        "-p",
+        "/home/goerz/cjtest"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": false,
+      "ssh": "ssh"
+    },
+    "response": ""
+  },
+  {
+    "args": [
+      [
+        "qsub",
+        "test_clj.sge"
+      ],
+      null,
+      "/home/goerz",
+      "cjtest"
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Your job 2418 (\"test_clj\") has been submitted\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00000, vmem=N/A, maxvmem=N/A\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00000, vmem=N/A, maxvmem=N/A\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00000, vmem=N/A, maxvmem=N/A\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00000, vmem=N/A, maxvmem=N/A\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00000, vmem=N/A, maxvmem=N/A\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00000, vmem=N/A, maxvmem=N/A\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "==============================================================\njob_number:                 2418\nexec_file:                  job_scripts/2418\nsubmission_time:            Mon Feb 29 13:40:07 2016\nowner:                      goerz\nuid:                        513\ngroup:                      goerz\ngid:                        513\nsge_o_home:                 /home/goerz\nsge_o_log_name:             goerz\nsge_o_path:                 /home/goerz/clusterjob/.venv/py35/bin:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/home/goerz/bin:/home/goerz/local/bin:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/local/ge6.2u5/bin/lx26-amd64:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/goerz/bin:/home/goerz/bin\nsge_o_shell:                /bin/bash\nsge_o_workdir:              /home/goerz/cjtest\nsge_o_host:                 bigboy\naccount:                    sge\ncwd:                        /home/goerz/cjtest\nmerge:                      y\nhard resource_list:         h_rt=300\nmail_list:                  goerz@bigboy\nnotify:                     FALSE\njob_name:                   test_clj\nstdout_path_list:           NONE:NONE:clusterjob_test.out\njobshare:                   0\nshell_list:                 NONE:/bin/bash\nenv_list:                   \nscript_file:                test_clj.sge\nusage    1:                 cpu=00:00:00, mem=0.00000 GBs, io=0.00004, vmem=119.973M, maxvmem=119.973M\nscheduling info:            (Collecting of scheduler job information is turned off)\n"
+  },
+  {
+    "args": [
+      [
+        "qstat",
+        "-j",
+        "2418"
+      ],
+      null
+    ],
+    "kwargs": {
+      "ignore_exit_code": true,
+      "ssh": "ssh"
+    },
+    "response": "Following jobs do not exist: \n2418\n"
+  }
+]
