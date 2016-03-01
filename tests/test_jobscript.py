@@ -40,7 +40,6 @@ def test_write_expand_tilde(tmpdir, monkeypatch):
     and *not* expanded when wriging to a remote file (there, the expansion will
     be performed by SSH)
     """
-    monkeypatch.setattr(JobScript, 'debug_cmds', True)
     monkeypatch.setattr(JobScript, '_write_script', Mock())
     body = 'sleep 180'
     job = JobScript(body, jobname='test_clj')

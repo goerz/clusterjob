@@ -66,7 +66,6 @@ def test_workflow(workflow_files, monkeypatch):
 
     # Monkeypatch the JobScript class to suppress actual communication in
     # replay mode
-    monkeypatch.setattr(JobScript, 'debug_cmds', True)
     monkeypatch.setenv('HOME', '/home/clusterjob_test')
     def dummy_write_script(self, scriptbody, filename, remote):
         filepath = os.path.split(filename)[0]

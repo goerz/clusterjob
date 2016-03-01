@@ -207,9 +207,9 @@ def test_read_defaults(caplog, tmpdir):
     jobscript = JobScript(body="echo 'Hello'", jobname="test")
     assert get_attributes(jobscript) == ['aux_scripts', 'body', 'resources']
     assert get_attributes(jobscript.__class__) == ['backend', 'backends',
-            'cache_folder', 'cache_prefix', 'debug_cmds', 'epilogue',
-            'filename', 'max_sleep_interval', 'prologue', 'remote',
-            'resources', 'rootdir', 'scp', 'shell', 'ssh', 'workdir']
+            'cache_folder', 'cache_prefix', 'epilogue', 'filename',
+            'max_sleep_interval', 'prologue', 'remote', 'resources', 'rootdir',
+            'scp', 'shell', 'ssh', 'workdir']
     for attr in get_attributes(jobscript.__class__):
         if attr not in ['resources', 'backends']:
             assert getattr(jobscript, attr) == default_class_attr_val(attr)

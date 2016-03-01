@@ -121,8 +121,6 @@ class JobScript(object):
             jobs will be stored inside `cachefolder` in a file
             `cache_prefix`.`cache_id`.cache, where `cache_id` is defined in the
             `submit` method.
-        debug_cmds (boolean): If set to True, write debug information about all
-            external commands (:func:`utils.run_cmd` calls) to stdout.
 
         resources (OrderedDict): Dictionary of *default* resource requirements.
             Modifying the `resources` class attribute affects the default
@@ -328,7 +326,6 @@ class JobScript(object):
     # the following are genuine class attributes:
     _protected_attributes = {
         '_backends': {},
-        'debug_cmds': False,
         'cache_folder': None,
         'cache_prefix': 'clusterjob',
         '_cache_counter': 0,
@@ -555,9 +552,7 @@ class JobScript(object):
         readers = {
             # for values that are not strings, be must specify a reader
             'Attributes': defaultdict(lambda:config.get,
-                {'debug_cmds': config.getboolean,
-                 'max_sleep_interval': config.getint,
-                }
+                {'max_sleep_interval': config.getint, }
             ),
             'Resources': defaultdict(lambda:config.get,
                 {'nodes': config.getint,
@@ -766,7 +761,6 @@ class JobScript(object):
         backend = self._backends[self.backend]
 
         ar = AsyncResult(backend=backend)
-        ar.debug_cmds = self.debug_cmds
         ar.ssh = self.ssh
         ar.scp = self.scp
 
@@ -791,7 +785,6 @@ class JobScript(object):
                             os.unlink(cache_file)
                             ar = \
                             AsyncResult(backend=backend)
-                            ar.debug_cmds = self.debug_cmds
                             ar.ssh = self.ssh
                             ar.scp = self.scp
                             submitted = False
@@ -890,7 +883,6 @@ class AsyncResult(object):
             in the ``$PATH``.
     """
 
-    debug_cmds = False
     _run_cmd = staticmethod(run_cmd)
     # setting the sleep_interval < 1 can have some very problematic
     # consquences, so we build in a safety net.
