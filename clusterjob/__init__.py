@@ -142,7 +142,7 @@ class JobScript(object):
             one of the default backends, the :meth:`register_backend` class
             method must be used to register the backend before any job may use
             it. Defaults to 'slurm'.
-        shell (str): Shell that is used to execute runscript.  Defaults to
+        shell (str): Shell that is used to execute the job script. Defaults to
             ``/bin/bash``.
         remote (str or None): Remote server on which to execute submit
             commands. If None (default), submit locally.
@@ -593,8 +593,9 @@ class JobScript(object):
 
         Rendering proceeds in the following steps:
 
-        * Add a "shbang" (e.g. ``#!/bin/bash``, based on the `shell` attribute).
-          Any existing shbang will be stripped out
+        * Add a "shbang" (e.g. ``#!/bin/bash``) based on the `shell` attribute
+          if the `scriptbody` does not yet have a shbang on the first line
+          (otherwise the existing shbang will remain)
 
         * If rendering the body of a JobScript (`jobscript=True`), add
           backend-specific resource headers (based on the `resources`
@@ -615,9 +616,7 @@ class JobScript(object):
           - instance attributes
           - class attributes
         """
-        # add a shbang
         rendered_lines = []
-        rendered_lines.append("#!%s" % self.shell)
         # add the resource headers
         backend = self._backends[self.backend]
         if jobscript:
@@ -628,15 +627,18 @@ class JobScript(object):
         mappings = dict(self.__class__.__dict__)
         mappings.update(self.__dict__)
         mappings.update(self.resources)
-        for line in scriptbody.split("\n"):
-            if not line.startswith("#!"):
-                try:
-                    rendered_lines.append(line.format(**mappings))
-                except KeyError as exc:
-                    key = str(exc)[1:-1] # stripping out quotes
-                    raise KeyError("The scriptbody contains a formatting "
-                        "placeholder '{"+key+"}', but there is no matching "
-                        "attribute or resource entry")
+        for line_index, line in enumerate(scriptbody.split("\n")):
+            if line_index == 0:
+                if not line.startswith("#!"):
+                    # add shbang for file that does not have one
+                    rendered_lines.insert(0, "#!%s" % self.shell)
+            try:
+                rendered_lines.append(line.format(**mappings))
+            except KeyError as exc:
+                key = str(exc)[1:-1] # stripping out quotes
+                raise KeyError("The scriptbody contains a formatting "
+                    "placeholder '{"+key+"}', but there is no matching "
+                    "attribute or resource entry")
         return "\n".join(rendered_lines)
 
     def __str__(self):
