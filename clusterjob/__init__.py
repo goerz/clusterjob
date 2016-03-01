@@ -356,6 +356,12 @@ class JobScript(object):
                 register. After registration, the `backend` attribute of the
                 `ClusterJob` may then refer to the backend by name
                 (`backend.name`).
+
+        Raises:
+            TypeError: if backend is not an instance of ClusterjobBackend, or
+                does not implement the backend interface correctly
+            AttributeError: if backend does not have the attributes `name` and
+                `extension`
         """
         logger = logging.getLogger(__name__)
         if not isinstance(backend, ClusterjobBackend):

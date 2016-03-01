@@ -48,3 +48,25 @@ def test_cli_backend_tester(monkeypatch, request):
     job = clusterjob.cli._run_testing_workflow.call_args[0][0]
     assert job.resources['jobname'] == 'test_clj'
 
+    monkeypatch.syspath_prepend(test_dir)
+
+    result = runner.invoke(cli_backend_tester, [inifile,
+                    '--backend', 'custom_backends.Backend1'])
+    assert result.exit_code == 1
+    assert "backend must be an instance of ClusterjobBackend" in result.output
+
+    result = runner.invoke(cli_backend_tester, [inifile,
+                    '--backend', 'custom_backends.Backend2'])
+    assert result.exit_code == 1
+    assert "Can't instantiate abstract class Backend2 with abstract methods " \
+            "get_status" in result.output
+
+    result = runner.invoke(cli_backend_tester, [inifile,
+                    '--backend', 'custom_backends.Backend3'])
+    assert result.exit_code == 1
+    assert "has no attribute 'name'" in result.output
+
+    result = runner.invoke(cli_backend_tester, [inifile,
+                    '--backend', 'custom_backends.Backend4'])
+    assert result.exit_code == 0
+    del job._backends['backend4']

@@ -81,22 +81,22 @@ def _run_testing_workflow(job, prompt=True):
     "--show-default-body.", type=click.Path(exists=True))
 @click.option('--jobname', metavar='JOBNAME', show_default=True,
         default='test_clj', help="Name of the job")
-@click.option('--backend_module', '-m', metavar='MOD', help="Module from "
-    "which to load a custom backend")
+@click.option('--backend', metavar='CLS', help="Class from which to load "
+        "custom backend.")
 @click.option('--show-default-body', is_flag=True, help="Print the default "
               "script body and exit.", callback=_print_default_test_body,
               expose_value=False, is_eager=True)
 @click.argument('inifile', type=click.Path(exists=True))
-def test_backend(inifile, body, backend_module, jobname):
+def test_backend(inifile, body, backend, jobname):
     """Perform a workflow test for a backend/job configuration specified in
     INIFILE. Create a clusterjob.JobScript instance of a simple default script
     (or any other script specified via --body). Read settings from the INIFILE
     (see JobScript.read_settings method). The INIFILE may refer to a custom
-    backend loaded via the '-m' option: E.g. `-m mymod` is equivalent to
-    the Python code
+    backend loaded via the '--backend' option: E.g. `-backend mymod.MyBackend`
+    is equivalent to the Python code
 
         \b
-        import mymod; JobScript.register_backend(mymod.backend)
+        import mymod; JobScript.register_backend(mymod.MyBackend())
 
     See the clusterjob documentation for details.
 
@@ -138,10 +138,23 @@ def test_backend(inifile, body, backend_module, jobname):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-    if backend_module is not None:
-        click.echo("Loading backend from %s.backend" % backend_module)
+    if backend is not None:
+        click.echo("Loading backend from %s" % backend)
+        if "." not in backend:
+            click.echo("ERROR: --backend CLS must contain the module from "
+                       "which to import the class")
+            sys.exit(1)
+        backend_parts = backend.split(".")
+        backend_module = ".".join(backend_parts[:-1])
+        if os.path.isfile(backend_module.replace(".", os.path.sep)+".py"):
+            sys.path.append('.')
+        backend_class = backend_parts[-1]
         mod = importlib.import_module(backend_module)
-        JobScript.register_backend(mod.backend)
+        try:
+            JobScript.register_backend(mod.__dict__[backend_class]())
+        except (TypeError, ImportError, KeyError, AttributeError) as exc_info:
+            click.echo("ERROR: %s" % str(exc_info))
+            sys.exit(1)
         click.echo("")
 
     basename = os.path.splitext(inifile)[0]
