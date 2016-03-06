@@ -117,17 +117,24 @@ class LsfBackend(ClusterjobBackend):
         lines that encode the resource requirements, to be added at the top of
         the rendered job script
         """
-        resources = jobscript.resources.copy()
+        resources = jobscript.resources
         lines = []
+        cores_per_node = 1
+        nodes = 1
+        if 'ppn' in resources:
+            cores_per_node *= resources['ppn']
         if 'threads' in resources:
-            if 'nodes' in resources:
-                n_total = resources['nodes'] * resources['threads']
-                lines.append('%s -n %d' % (self.prefix, n_total))
-                del resources['nodes']
-            else:
-                lines.append('%s -n %d' % (self.prefix, resources['threads']))
-            del resources['threads']
+            cores_per_node *= resources['threads']
+        if 'nodes' in resources:
+            nodes = resources['nodes']
+        if len(set(['ppn', 'threads', 'nodes']).intersection(resources)) > 0:
+            line = '%s -n %d' % (self.prefix, nodes*cores_per_node)
+            if cores_per_node > 1:
+                line += ' -R "span[ptiles=%d]"' % cores_per_node
+            lines.append(line)
         for (key, val) in resources.items():
+            if key in ['nodes', 'ppn', 'threads']:
+                continue
             if key in self.resource_replacements:
                 lsf_key = self.resource_replacements[key]
                 if key == 'time':

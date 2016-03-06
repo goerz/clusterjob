@@ -77,36 +77,52 @@ class JobScript(object):
         aux_scripts (dict(str=>str), optional): dictionary of auxiliary
             scripts, to be stored in the `aux_scripts` attribute.
 
-    The _keyword arguments, if given, either set values for keys in the
-    `resources` instance attribute, or values for instance attributes directly.
-    For the former use of setting `resources`, at a minimum, the following
-    _`keyword arguments` are supported:
+    Keyword arguments (`kwargs`) that correspond to :ref:`known attributes
+    <Class/Instance Attributes>` set the value of that (instance) attribute.
+    Any other keyword arguments are stored as entries in the `resources`
+    attribute, to be processed by the backend.  The following
+    _`keyword arguments` set resource specification that should be handled by
+    any backend.
 
     Keyword Arguments:
         queue (str):   Name of queue/partition to which to submit the job
-        time (str):    Maximum runtime
-        nodes (int):   Required number of nodes
-        threads (int): Required number of threads (cores)
-        mem (int):     Required memory (MB)
-        stdout (str):  name of file to which to write the jobs stdout
-        stderr (str):  name of file to which to write the jobs stderr
+        time (str):    Maximum runtime.
+                       See :func:`~clusterjob.utils.time_to_seconds` for
+                       acceptable formats.
+        nodes (int):   Number of nodes on which to run. Depending on the
+                       configuration of the scheduler, if the number of used
+                       cores per node is smaller than the number of CPU cores
+                       on a physical node, multiple jobs may or may not be
+                       placed on the same *physical* node.
+        ppn (int):     (MPI) processes to run per node. The total number of MPI
+                       processes will be ``nodes*ppn``. Note that `ppn` is
+                       *not* the same as the `ppn` keyword in PBS/TORQUE (which
+                       refers to the total number of CPU cores used per node).
+        threads (int): Number of OpenMP threads, or subprocesses, spawned per
+                       process. The total number of CPU cores used per
+                       node will be ``ppn*threads``.
+        mem (int):     Required memory, per node in MB
+        stdout (str):  Name of file to which to write the jobs stdout
+        stderr (str):  Name of file to which to write the jobs stderr
 
-    Some backends may define further options, or even support arbitrary
-    additional options. For example, in the default SLURM backend,
-    unknown options are passed directly as arguments to ``sbatch``, where
-    single-letter argument names are prepended with ``-``, multi-letter
-    argument names with ``--``. An argument with boolean values is passed
-    without any value iff the value is True::
+    The above list constitutes the simplified resource model supported by the
+    `clusterjob` package, as a lowest common denominator of various schedulig
+    systems. Other keyword argument can be used, but they will be
+    backend-specific, and may or may not be handled correctly.  In the default
+    SLURM backend, any keyword arguments not in the above list are transformed
+    directly to arguments for ``sbatch``, where single-letter argument names
+    are prepended with ``-``, and multi-letter argument names with ``--``. An
+    argument with boolean values is passed without any value iff the value is
+    True::
 
         contiguous=True          -> --contiguous
         dependency='after:12454' -> --dependency=after:12454
         F='nodefile.txt'         -> -F nodefile.txt
 
-    All backends are encouraged to implement a similar behavior.
-
-    Any of the attributes listed in **Class/Instance Attributes** below may
-    also be given as keyword arguments during instantiation, in order to
-    initialize the corresponding instance attributes.
+    All backends are encouraged to implement a similar behavior, to handle
+    arbitrary resource requirements. Note that an alternative (and preferred)
+    way of setting properties (especially backend-specific ones) is through the
+    :meth:`read_settings` method.
 
     .. rubric:: _`Class Attributes`
 
@@ -132,13 +148,13 @@ class JobScript(object):
 
     .. rubric:: _`Class/Instance Attributes`
 
-    The are class attributes, with the expectation that
+    The following are class attributes, with the expectation that
     they may be shadowed by instance attributes of the same name.
 
     Attributes:
 
         backend (str): Name of backend, must be an element in
-            :attr:`JobScript.backends`. That is, `backend` does not refer to
+            :attr:`JobScript.backends`. That is, if `backend` does not refer to
             one of the default backends, the :meth:`register_backend` class
             method must be used to register the backend before any job may use
             it. Defaults to 'slurm'.
@@ -601,11 +617,11 @@ class JobScript(object):
           backend-specific resource headers (based on the `resources`
           attribute)
 
-        * Apply the mappings defined in the `job_vars` entry of the backend,
-          replacing environment variables with their proper names. Note that
-          the prologue and epilogue will not be run by a scheduler, and thus
-          will not have access to the same environment variables as a job
-          script.
+        * Map environment variables to their corresponding scheduler-specific
+          version, using the backend's :meth:`~clusterjob.backends.ClusterjobBackend.replace_body_vars`
+          method. Note that the prologue and epilogue will not be run by a
+          scheduler, and thus will not have access to the same environment
+          variables as a job script.
 
         * Format each line with known attributes (see
           https://docs.python.org/3.5/library/string.html#formatspec).

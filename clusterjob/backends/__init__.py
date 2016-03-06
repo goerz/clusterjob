@@ -14,7 +14,7 @@ class ClusterjobBackend(object):
         name (str): name of the backend
         extension (str): extension to be used for job scripts
     """
-    common_keys = ['name', 'queue', 'time', 'nodes', 'threads', 'mem',
+    common_keys = ['name', 'queue', 'time', 'nodes', 'ppn', 'threads', 'mem',
                    'stdout', 'stderr']
 
     @abstractmethod

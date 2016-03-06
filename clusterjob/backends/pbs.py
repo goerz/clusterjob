@@ -48,7 +48,7 @@ class PbsBackend(ClusterjobBackend):
             'mem'    : '-l mem=',
             'stdout' : '-o',
             'stderr' : '-e',
-            # nodes and threads are handled separately, in resource_headers
+            # nodes, ppn, threads are handled separately, in resource_headers
         }
         self.job_vars = {
             '$CLUSTERJOB_ID'         : '$PBS_JOBID',
@@ -119,19 +119,22 @@ class PbsBackend(ClusterjobBackend):
         lines that encode the resource requirements, to be added at the top of
         the rendered job script
         """
-        resources = jobscript.resources.copy()
+        resources = jobscript.resources
         lines = []
+        cores_per_node = 1
+        nodes = 1
+        if 'ppn' in resources:
+            cores_per_node *= resources['ppn']
+        if 'threads' in resources:
+            cores_per_node *= resources['threads']
         if 'nodes' in resources:
-            if 'threads' in resources:
-                lines.append('%s -l nodes=%s:ppn=%s'
-                             % (self.prefix, resources['nodes'],
-                                resources['threads']))
-                del resources['threads']
-            else:
-                lines.append('%s -l nodes=%s'
-                             % (self.prefix, resources['nodes']))
-            del resources['nodes']
+            nodes = resources['nodes']
+        if len(set(['ppn', 'threads', 'nodes']).intersection(resources)) > 0:
+            lines.append('%s -l nodes=%d:ppn=%d'
+                        % (self.prefix, nodes, cores_per_node))
         for (key, val) in resources.items():
+            if key in ['nodes', 'threads', 'ppn']:
+                continue
             if key in self.resource_replacements:
                 pbs_key = self.resource_replacements[key]
                 if key == 'mem':

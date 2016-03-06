@@ -129,7 +129,9 @@ class SgeBackend(ClusterjobBackend):
                     val = str(val) + "m"
             else:
                 pbs_key = key
-            if key in ['nodes', 'threads', '-cwd', 'cwd']:
+            if key in ['nodes', 'threads', 'ppn', '-cwd', 'cwd']:
+                # TODO: raise an exception (parallelization cannot be
+                # expressed)
                 continue
             if val is None:
                 continue

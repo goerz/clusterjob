@@ -2,7 +2,8 @@ Introduction
 ============
 
 Workflows for scientific computing center around writing scripts for a
-job scheduler, such as `SLURM`_ or `TORQUE/PBS`_, on a remote cluster.
+job scheduler, such as `SLURM`_ or `TORQUE/PBS`_, on a
+high-performance-computing (HPC) cluster.
 The clusterjob package moves this paradigm into the Python ecosystem. It
 provides an abstraction of the :ref:`common model <model>` underlying the
 various different scheduling systems. From inside a Python script, cluster jobs
@@ -25,7 +26,7 @@ The goals of the clusterjob package are *reproducibility*, *robustness*, and
   information about submitted jobs, a workflow script can be aborted and rerun
   at any time, continuing where it left off. The intent is to manage a
   long-running set of calculations on a cluster from e.g. a laptop computer.
-* Separate the calculation from the specifics of a particular
+* Aid in separating the calculation workflow from the specifics of a particular
   cluster/scheduling system. The clusterjob package can read all backend
   information and resource requirements from :ref:`INI-style text files <inifiles>`.
   This allows to easily port an existing computing workflow to a different
