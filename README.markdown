@@ -8,7 +8,7 @@ Python library to manage workflows on traditional HPC cluster systems.
 
 The library provides the `JobScript` class that wraps around shell scripts,
 allowing them to be submitted to a local or remote HPC cluster scheduling
-system. The resource requirements (nodes, cpus, runtime, etc.) for the scheduler
+system. The resource requirements (nodes, CPUs, runtime, etc.) for the scheduler
 are stored in the attributes of the JobScript object.
 
 [Read the full documentation on ReadTheDocs](http://clusterjob.readthedocs.org/en/latest/)
@@ -17,12 +17,14 @@ At present, the following schedulers are supported:
 
 *   [SLURM](https://computing.llnl.gov/linux/slurm/) (default)
 *   [Torque/PBS](http://www.adaptivecomputing.com/products/open-source/torque/)
+*   [PBS Pro](http://www.pbsworks.com/PBSProduct.aspx?n=PBS-Professional&c=Overview-and-Capabilities)
 *   [LPBS](https://github.com/goerz/LPBS)
+*   [LSF](http://www.platform.com/Products/platform-lsf)
 *   [Sun Grid Engine (SGE)](http://en.wikipedia.org/wiki/Oracle_Grid_Engine) (deprecated)
 
 Support for the
-[Univa Grid Engine (UGE)](http://www.univa.com/products/grid-engine.php) and
-[LSF](http://www.platform.com/Products/platform-lsf) is planned.
+[Univa Grid Engine (UGE)](http://www.univa.com/products/grid-engine.php)
+is planned.
 
 ## Installation
 
