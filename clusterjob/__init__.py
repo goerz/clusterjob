@@ -362,14 +362,18 @@ class JobScript(object):
     resources = OrderedDict()
 
     @classmethod
-    def register_backend(cls, backend):
+    def register_backend(cls, backend, name=None):
         """Register a new backend.
 
         Arguments:
             backend (clusterjob.backends.ClusterjobBackend): The backend to
-                register. After registration, the `backend` attribute of the
-                `ClusterJob` may then refer to the backend by name
-                (`backend.name`).
+                register. After registration, the `backend` attribute of a
+                `ClusterJob` instance may then refer to the backend by name.
+            name (str): The name under which to register the backend. If not
+                given, use the name defind in the `backend`'s `name` attribute.
+                This attribute will be updated with `name`, if given, to ensure
+                that the name under which the backend is registered and the
+                `backend`'s internal `name` attribute are the same.
 
         Raises:
             TypeError: if backend is not an instance of ClusterjobBackend, or
@@ -380,14 +384,14 @@ class JobScript(object):
         logger = logging.getLogger(__name__)
         if not isinstance(backend, ClusterjobBackend):
             raise TypeError("backend must be an instance of ClusterjobBackend")
-        # check backend interface
-        if backend.name != str(backend.name):
-            raise TypeError("backend must have name attribute of type str")
-        name = backend.name
+        if name is None:
+            name = backend.name
+        else:
+            backend.name = name
         if backend.extension != str(backend.extension):
             raise TypeError("backend "+name+" must have extension attribute "
                             "of type str")
-        cls._backends[backend.name] = backend
+        cls._backends[name] = backend
 
     @classmethod
     def clear_cache_folder(cls):

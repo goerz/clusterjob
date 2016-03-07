@@ -11,7 +11,7 @@ class ClusterjobBackend(object):
     inherit from this and implement the interface specified below.
 
     Attributes:
-        name (str): name of the backend
+        name (str): (default) name of the backend
         extension (str): extension to be used for job scripts
     """
     common_keys = ['name', 'queue', 'time', 'nodes', 'ppn', 'threads', 'mem',
