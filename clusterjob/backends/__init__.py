@@ -57,9 +57,10 @@ class ClusterjobBackend(object):
     def resource_headers(self, jobscript):
         """Given a :class:`~clusterjob.JobScript` instance, return a list of
         lines (no trailing newlines) that encode the resource requirements, to
-        be added at the top of the rendered job script. At the very least, keys
-        in the `jobscript` resources dict that are in the list of
-        :attr:`common_keys` must be handled.
+        be added at the top of the rendered job script, between the shbang and
+        the script body. At the very least, keys in the `jobscript` resources
+        dict that are in the list of :attr:`common_keys` must be handled, or a
+        :exc:`ResourcesNotSupportedError` must be raised.
         """
         raise NotImplementedError()
 
@@ -104,3 +105,9 @@ class ClusterjobBackend(object):
 #       account the submission scripts
 #       """
 #       return {}
+
+
+class ResourcesNotSupportedError(Exception):
+    """Exception to indicate that a backend is unable to encode a resource
+    requirement"""
+    pass

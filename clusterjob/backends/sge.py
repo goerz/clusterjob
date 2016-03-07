@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import re
 from ..status import RUNNING, COMPLETED
-from .. import ClusterjobBackend
+from .. import ClusterjobBackend, ResourcesNotSupportedError
 
 class SgeBackend(ClusterjobBackend):
     """SGE Backend
@@ -129,9 +129,13 @@ class SgeBackend(ClusterjobBackend):
                     val = str(val) + "m"
             else:
                 pbs_key = key
-            if key in ['nodes', 'threads', 'ppn', '-cwd', 'cwd']:
-                # TODO: raise an exception (parallelization cannot be
-                # expressed)
+            if key in ['nodes', 'threads', 'ppn']:
+                raise ResourcesNotSupportedError("The SGE scheduling system "
+                        "uses 'parallel environments' to request resources "
+                        "for parallelization. SgeBackend should be subclassed "
+                        "for a specific cluster configuration in order to "
+                        "encode 'nodes', 'threads', and 'ppn'.")
+            if key in ['-cwd', 'cwd']:
                 continue
             if val is None:
                 continue

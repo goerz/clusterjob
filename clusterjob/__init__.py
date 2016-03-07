@@ -36,7 +36,7 @@ import pprint
 import pkgutil
 import time
 
-from .backends import ClusterjobBackend
+from .backends import ClusterjobBackend, ResourcesNotSupportedError
 from .backends.lpbs import LPbsBackend
 from .backends.lsf import LsfBackend
 from .backends.pbs import PbsBackend
@@ -82,7 +82,8 @@ class JobScript(object):
     Any other keyword arguments are stored as entries in the `resources`
     attribute, to be processed by the backend.  The following
     _`keyword arguments` set resource specification that should be handled by
-    any backend.
+    any backend (or, the backend should raise a
+    :exc:`~clusterjob.backends.ResourcesNotSupportedError`).
 
     Keyword Arguments:
         queue (str):   Name of queue/partition to which to submit the job
@@ -808,8 +809,6 @@ class JobScript(object):
                             submitted = False
 
         if not submitted:
-            self._run_prologue()
-            self.write()
             for filename in self.aux_scripts:
                 self._write_script(
                     scriptbody=self.render_script(self.aux_scripts[filename]),
@@ -818,6 +817,8 @@ class JobScript(object):
                     remote=self.remote)
             job_id = None
             try:
+                self.write()
+                self._run_prologue()
                 cmd = backend.cmd_submit(self)
                 response = self._run_cmd(cmd, self.remote, self.rootdir,
                                          self.workdir, ignore_exit_code=True,
@@ -829,7 +830,7 @@ class JobScript(object):
                 else:
                     logger.info("Job ID: %s", job_id)
                     status = PENDING
-            except sp.CalledProcessError as e:
+            except (sp.CalledProcessError, ResourcesNotSupportedError) as e:
                 logger.error("Failed to submit job: %s", e)
                 status = FAILED
 
