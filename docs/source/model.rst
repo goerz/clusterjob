@@ -185,7 +185,7 @@ that consists of homogeneous nodes with 32 CPU cores each.
 
         * SLURM: ``--nodes=4 --tasks-per-node=2 --cpus-per-task=16``, or
           ``-n8 -c16``
-        * PBS Pro: ``-l select=4:ncpus=32:mpiproc2:ompthreads=16``
+        * PBS Pro: ``-l select=4:ncpus=32:mpiprocs=2:ompthreads=16``
         * PBS/TORQUE: ``-l nodes=4:ppn=32``
         * LSF: ``-n 128 -R "span[ptile=32]"``
 

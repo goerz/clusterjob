@@ -1,8 +1,8 @@
 #!/bin/bash
+#PBS -l select=1:ncpus=32:mpiprocs=32:ompthreads=1
 #PBS -N test_clj
 #PBS -q debug
 #PBS -l walltime=00:05:00
-#PBS -l select=1:ncpus=32:mpiprocs=32
 #PBS -A XXXXXXXXXXXXX
 #PBS -j oe
 #PBS -o clusterjob_test.out

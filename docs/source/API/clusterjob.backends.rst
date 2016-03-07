@@ -14,6 +14,7 @@ Submodules
    clusterjob.backends.lpbs
    clusterjob.backends.lsf
    clusterjob.backends.pbs
+   clusterjob.backends.pbspro
    clusterjob.backends.sge
    clusterjob.backends.slurm
 

@@ -40,6 +40,7 @@ from .backends import ClusterjobBackend, ResourcesNotSupportedError
 from .backends.lpbs import LPbsBackend
 from .backends.lsf import LsfBackend
 from .backends.pbs import PbsBackend
+from .backends.pbspro import PbsProBackend
 from .backends.sge import SgeBackend
 from .backends.slurm import SlurmBackend
 from .status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
@@ -47,8 +48,8 @@ from .status import (STATUS_CODES, COMPLETED, FAILED, CANCELLED, PENDING,
 from .utils import (set_executable, run_cmd, upload_file, mkdir,
         time_to_seconds)
 
-_BACKENDS = [LPbsBackend(), LsfBackend(), PbsBackend(), SgeBackend(),
-             SlurmBackend()]
+_BACKENDS = [LPbsBackend(), LsfBackend(), PbsBackend(), PbsProBackend(),
+             SgeBackend(), SlurmBackend()]
 
 def _init_with_read_defaults(cls):
     """Class decorator that calls the read_defaults class method in order to
