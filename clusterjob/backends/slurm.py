@@ -43,7 +43,7 @@ class SlurmBackend(ClusterjobBackend):
             'queue'  : '--partition',
             'time'   : '--time',
             'nodes'  : '--nodes',
-            'ppe'    : '--tasks-per-node',
+            'ppn'    : '--tasks-per-node',
             'threads': '--cpus-per-task',
             'mem'    : '--mem',
             'stdout' : '--output',
