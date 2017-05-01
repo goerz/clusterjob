@@ -86,9 +86,9 @@ class SlurmBackend(ClusterjobBackend):
         ``sacct``. Otherwise, ``squeue`` is used.
         """
         if finished:
-            return ['sacct', '--format=state', '-n', '-j %s' % run.job_id]
+            return ['sacct', '--format=state', '-n', '-j',  str(run.job_id)]
         else:
-            return ['squeue', '-h', '-o %T', '-j %s' % run.job_id]
+            return ['squeue', '-h', '-o', '%T', '-j', str(run.job_id)]
 
     def get_status(self, response, finished=False):
         """Given the stdout from the command returned by :meth:`cmd_status`,
