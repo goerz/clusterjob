@@ -784,14 +784,11 @@ class JobScript(object):
 
         backend = self._backends[self.backend]
 
-        ar = AsyncResult(backend=backend)
-        ar.ssh = self.ssh
-        ar.scp = self.scp
-
         if self.cache_folder is not None:
             mkdir(self.cache_folder)
-            cache_file = os.path.join(self.cache_folder,
-                                 "%s.%s.cache" % (self.cache_prefix, cache_id))
+            cache_file = os.path.join(
+                self.cache_folder,
+                "%s.%s.cache" % (self.cache_prefix, cache_id))
             if os.path.isfile(cache_file):
                 if force:
                     try:
@@ -800,17 +797,13 @@ class JobScript(object):
                         pass
                 else:
                     logger.debug("Reloading AsyncResult from %s", cache_file)
-                    ar.load(cache_file)
+                    ar = AsyncResult.load(cache_file, backend=backend)
                     submitted = True
                     if ar._status >= CANCELLED:
                         if retry:
                             logger.debug("Cached run %s, resubmitting",
                                          str_status[ar._status])
                             os.unlink(cache_file)
-                            ar = \
-                            AsyncResult(backend=backend)
-                            ar.ssh = self.ssh
-                            ar.scp = self.scp
                             submitted = False
 
         if not submitted:
@@ -839,6 +832,9 @@ class JobScript(object):
                 logger.error("Failed to submit job: %s", e)
                 status = FAILED
 
+            ar = AsyncResult(backend=backend)
+            ar.ssh = self.ssh
+            ar.scp = self.scp
             ar.remote = self.remote
             ar.cache_file = cache_file
             ar.backend = backend
@@ -909,7 +905,7 @@ class AsyncResult(object):
 
     _run_cmd = staticmethod(run_cmd)
     # setting the sleep_interval < 1 can have some very problematic
-    # consquences, so we build in a safety net.
+    # consequences, so we build in a safety net.
     _min_sleep_interval = 1
     # For testing, we can still get around this under the assumption that we
     # know exactly what we're doing!
@@ -917,6 +913,8 @@ class AsyncResult(object):
     def __init__(self, backend):
         self.remote = None
         self.cache_file = None
+        if not isinstance(backend, ClusterjobBackend):
+            raise TypeError("backend must be an instance of ClusterjobBackend")
         self.backend = backend
         self.max_sleep_interval = 160
         self.job_id = ''
@@ -945,7 +943,7 @@ class AsyncResult(object):
                 status = self.backend.get_status(response, finished=True)
             prev_status = self._status
             self._status = status
-            if not self._status in STATUS_CODES:
+            if self._status not in STATUS_CODES:
                 raise ValueError("Invalid status code %s", self._status)
             if prev_status != self._status:
                 if self._status >= COMPLETED:
@@ -963,23 +961,46 @@ class AsyncResult(object):
             return self.status
 
     def dump(self, cache_file=None):
-        """Write dump out to file"""
+        """Write dump out to file `cache_file`, defaulting to
+        ``self.cache_file``"""
         if cache_file is None:
             cache_file = self.cache_file
         if cache_file is not None:
             self.cache_file = cache_file
             with open(cache_file, 'wb') as pickle_fh:
-                pickle.dump((self.remote, self.max_sleep_interval, self.job_id,
-                             self._status, self.epilogue, self.ssh, self.scp),
-                            pickle_fh)
+                pickle.dump(
+                    (self.remote, self.backend.name, self.max_sleep_interval,
+                     self.job_id, self._status, self.epilogue, self.ssh,
+                     self.scp),
+                    pickle_fh)
 
-    def load(self, cache_file):
-        """Read dump from file"""
-        self.cache_file = cache_file
+    @classmethod
+    def load(cls, cache_file, backend=None):
+        """Instantiate AsyncResult from  dumped `cache_file`.
+
+        This is the inverse of :meth:`dump`.
+
+        Parameters
+        ----------
+
+            cache_file: str
+                Name of file from which the run should be read.
+
+            backend: clusterjob.backends.ClusterjobBackend or None
+                The backend instance for the job. If None, the backend will be
+                determined by the *name* of the dumped job's backend.
+        """
         with open(cache_file, 'rb') as pickle_fh:
-            self.remote, self.max_sleep_interval, self.job_id, self._status, \
-            self.epilogue, self.ssh, self.scp = pickle.load(pickle_fh)
-
+            (remote, backend_name, max_sleep_interval, job_id, status,
+             epilogue, ssh, scp) = pickle.load(pickle_fh)
+        if backend is None:
+            backend = JobScript._backends[backend_name]
+        ar = cls(backend)
+        (ar.remote, ar.max_sleep_interval, ar.job_id, ar._status, ar.epilogue,
+         ar.ssh, ar.scp) \
+            = (remote, max_sleep_interval, job_id, status, epilogue, ssh, scp)
+        ar.cache_file = cache_file
+        return ar
 
     def wait(self, timeout=None):
         """Wait until the result is available or until roughly timeout seconds
