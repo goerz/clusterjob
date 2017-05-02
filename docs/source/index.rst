@@ -17,6 +17,7 @@ Contents:
    api
    tutorial
    using_inifiles
+   pydoit_pipeline
    adding_backends
    testing
 
