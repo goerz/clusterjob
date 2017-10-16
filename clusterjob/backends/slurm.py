@@ -50,13 +50,13 @@ class SlurmBackend(ClusterjobBackend):
             'stderr' : '--error',
         }
         self.job_vars = {
-            '$CLUSTERJOB_ID'         : '$SLURM_JOB_ID',
+            '$CLUSTERJOB_ID'         : '$SLURM_JOBID',
             '$CLUSTERJOB_WORKDIR'    : '$SLURM_SUBMIT_DIR',
             '$CLUSTERJOB_SUBMIT_HOST': '$SLURM_SUBMIT_HOST',
             '$CLUSTERJOB_NAME'       : '$SLURM_JOB_NAME',
             '$CLUSTERJOB_ARRAY_INDEX': '$SLURM_ARRAY_TASK_ID',
             '$CLUSTERJOB_NODELIST'   : '$SLURM_JOB_NODELIST',
-            '${CLUSTERJOB_ID}'         : '${SLURM_JOB_ID}',
+            '${CLUSTERJOB_ID}'         : '${SLURM_JOBID}',
             '${CLUSTERJOB_WORKDIR}'    : '${SLURM_SUBMIT_DIR}',
             '${CLUSTERJOB_SUBMIT_HOST}': '${SLURM_SUBMIT_HOST}',
             '${CLUSTERJOB_NAME}'       : '${SLURM_JOB_NAME}',
